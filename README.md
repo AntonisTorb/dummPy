@@ -12,7 +12,7 @@ An application that produces fake (dummy) data for Data analytics practice
 - introduce functionality to create excel file and populate sheet based on dataframe contents
 - introduce functionality to save dataframe to external file and load on new session
 - add save option to reset and close warnings
-- create settings layout, saving and loading settings from external file
+- ~~create settings layout, saving and loading settings from external file~~ no need for settings
 - work on the menu and documentation/help
 - more proofing and optimization
 - additional capabilities
