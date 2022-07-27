@@ -1,7 +1,8 @@
-from pathlib import Path  # core python module
-#import pandas as pd  # pip install pandas openpyxl
+from pathlib import Path
+from random import choice, randint, uniform  # core python module
+import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
-#---------- !NEED TO TURN GLOBALS INTO PARAMETERS OR MOVE IN FUNCTIONS! -----------#
+
 DEFAULT_FONT = ("Arial", 14)
 DEFAULT_THEME = "DarkTeal1"
 
@@ -12,56 +13,154 @@ def position_correction(winpos,dx,dy):
     corrected[1] += dy
     return tuple (corrected)
 
-def configure(evt, win_pos):
+def read_sample_data(sheet):
+    a = pd.read_excel("SAMPLE_DATA.xlsx", sheet_name= sheet, usecols= [0,0], header=None).squeeze("columns")
+    return a.values.tolist()
+    
+#----------- ACTION DEPENDING ON DATA TYPE SELECTED -----------#
+def configure(evt, win_pos, rows):
     EXCEL_COLUMN = [chr(chNum) for chNum in list(range(ord('A'),ord('Z')+1))]
-    if evt in ("-FIRSTNAME-", "-LASTNAME-"):
-        print(evt)
-        # layout1 = 
-        # cat_window = sg.Window("Name",
-        # [
-        # [sg.Column(),sg.Column()]
-        # ])
-    if evt == "-AGE-":
-        layout1 = [
-            [sg.T("Min:",size = 4, justification= "r"), sg.I(size= (10,1), key= "-AGEMIN-"),sg.T("1 < Min < Max",font= DEFAULT_FONT+ ("italic",))],
-            [sg.T("Max:",size = 4, justification= "r"), sg.I(size= (10,1), key= "-AGEMAX-"),sg.T("Min < Max < 120",font= DEFAULT_FONT+ ("italic",))],
-            [sg.HorizontalSeparator()],
-            [sg.Push(),sg.T("Add to Column:"), sg.Combo(EXCEL_COLUMN, key = "-COLUMN-", readonly=True),sg.B("Clear"),sg.Push()],
-            [sg.Push(),sg.B("OK"), sg.B("Cancel"),sg.Push()]
+    #------------ FOR DATA NAME AND EMAIL ----------# 
+    if evt == "-NAME-":
+        f_names = read_sample_data("FIRST NAME")
+        l_names = read_sample_data("LAST NAME")
+        cat_location = position_correction(win_pos,50,50)
+        layout_name = [
+            [sg.T("First Name Samples"), sg.Push(), sg.T("Last Name Samples")],
+            [sg.Listbox(f_names, size= (15,5), key= "-FNAMES-"), sg.Push(), sg.Listbox(l_names, size= (15,5), key= "-LNAMES-")],
+            [sg.T("Add to Column:"), sg.Combo(EXCEL_COLUMN, key = "-COLUMN1-", readonly= True),sg.Push(), sg.B("Sample Reload")],
+            [sg.Checkbox("Add email address on column:", key= "-EMAIL-"),sg.Combo(EXCEL_COLUMN, key = "-COLUMN2-", readonly= True)],
+            [sg.Push(),sg.B("OK"), sg.B("Back"), sg.Push()]
         ]
-        cat_location = position_correction(win_pos,-10,50)
-        cat_window = sg.Window("-AGE-", layout1, font= DEFAULT_FONT, modal= True, location= cat_location)
-        #----------- DATA -AGE- LOOP -----------#
+        cat_window = sg.Window("Name", layout_name, font= DEFAULT_FONT, modal= True, location= cat_location)
+        #----------- DATA NAME LOOP ------------#
         while True:
             event, values = cat_window.read()
             cat_location = cat_window.current_location()
-            if event == sg.WINDOW_CLOSED or event == "Cancel":
+            if event == sg.WINDOW_CLOSED or event == "Back":
+                break
+            if event == "Sample Reload":
+                f_names = read_sample_data("FIRST NAME")
+                l_names = read_sample_data("LAST NAME")
+                cat_window.Element("-FNAMES-").update(f_names)
+                cat_window.Element("-LNAMES-").update(l_names)
+            if event == "OK":
+                if values["-COLUMN1-"] == "" or (values["-COLUMN2-"] == "" and values ["-EMAIL-"]):
+                    sg.Window("ERROR!", [[sg.T("Please specify the target Column(s)")],
+                    [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 20, 40)).read(close= True)
+                elif values["-COLUMN1-"] == values["-COLUMN2-"] and values ["-EMAIL-"]:
+                    sg.Window("ERROR!", [[sg.T("Please specify different Columns for name and e-mail")],
+                    [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 20, 40)).read(close= True)
+                else:
+                    names = []
+                    if values ["-EMAIL-"]:
+                        domains = read_sample_data("EMAIL DOMAIN")
+                        emails = []
+                        for i in range(rows):
+                            first = choice(f_names)
+                            last = choice(l_names)
+                            names.append(f"{first} {last}")
+                            domain = choice(domains)
+                            delta = randint(0,99)
+                            emails.append(f"{first}.{last}.{delta}@{domain}")
+                        #!!!!!!!!!!!!!   NEED TO ADD TO DF ON SELECTED COLUMN  !!!!!!!!!!!!!#
+                        #print (emails)
+                        #print (names)
+                    else:
+                        for i in range(rows):
+                            first = choice(f_names)
+                            last = choice(l_names)
+                            names.append(f"{first} {last}")
+                        #!!!!!!!!!!!!!   NEED TO ADD TO DF ON SELECTED COLUMN  !!!!!!!!!!!!!#
+                        #print (names)
+                    
+                    sg.Popup("done", font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 100, 40))
+        cat_window.close()
+    #------------ FOR DATA NUMBER ----------#    
+    if evt == "-NUMBER-":
+        DECIMALS = [i for i in range(8)]
+        layout_num = [
+            [sg.T("Min:",size = 4), sg.Push(), sg.I(size= (10,1), key= "-NUMMIN-")],
+            [sg.T("Max:",size = 4), sg.Push(), sg.I(size= (10,1), key= "-NUMMAX-")],
+            [sg.T("Decimals:"), sg.Push(), sg.Combo(DECIMALS, default_value= 0, key = "-DECIMALS-", readonly=True)],
+            [sg.HorizontalSeparator()],
+            [sg.Push(),sg.T("Add to Column:"), sg.Combo(EXCEL_COLUMN, key = "-COLUMN-", readonly= True),sg.B("Clear"),sg.Push()],
+            [sg.Push(),sg.B("OK"), sg.B("Back"),sg.Push()]
+        ]
+        cat_location = position_correction(win_pos,50,50)
+        cat_window = sg.Window("Number", layout_num, font= DEFAULT_FONT, modal= True, location= cat_location)
+        #----------- DATA NUMBER LOOP -----------#
+        while True:
+            event, values = cat_window.read()
+            cat_location = cat_window.current_location()
+            if event == sg.WINDOW_CLOSED or event == "Back":
                 break
             if event == "Clear":
-                cat_window.Element("-AGEMIN-").Update("")
-                cat_window.Element("-AGEMAX-").Update("")
+                cat_window.Element("-NUMMIN-").Update("")
+                cat_window.Element("-NUMMAX-").Update("")
             if event == "OK":
                 try:
                     if values["-COLUMN-"] == "":
                         sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
-                        [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location,20,40)).read(close= True)
+                        [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 20, 40)).read(close= True)
                     else:
-                        if int(values["-AGEMAX-"]) < int(values["-AGEMIN-"]):
+                        if float(values["-NUMMAX-"]) < float(values["-NUMMIN-"]):
                             sg.Window("ERROR!", [[sg.T("Please ensure that Min < Max")],
-                            [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location,40,40)).read(close= True)
-                        elif int(values["-AGEMIN-"]) < 120 and int(values["-AGEMIN-"]) > 0 and int(values["-AGEMAX-"]) < 120 and int(values["-AGEMAX-"]) > 0 and int(values["-AGEMAX-"]) > int(values["-AGEMIN-"]):
-                            #---------- !NEED TO ADD COLUMN DATA TO DF! ------------#
-                            sg.Popup("done", font= DEFAULT_FONT, modal= True, location= position_correction(cat_location,100,40))
-                            #break
+                            [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 40, 40)).read(close= True)
                         else:
-                            sg.Window("ERROR!", [[sg.T("Please ensure that values are between 1 and 120")],
-                            [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location,-50,40)).read(close= True)
+                            numbers= []
+                            for i in range (rows):
+                                numbers.append(round(uniform(float(values["-NUMMIN-"]), float(values["-NUMMAX-"])), values["-DECIMALS-"]))
+                            #!!!!!!!!!!!!!   NEED TO ADD TO DF ON SELECTED COLUMN  !!!!!!!!!!!!!#
+                            #print(numbers)
+                            sg.Popup("done", font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 100, 40))                    
                 except:
                     sg.Window("ERROR!", [[sg.T("Please ensure the values are integers")],
                     [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location,5,40)).read(close= True)
         cat_window.close()
-    if evt == "-COUNTRY-":
-            print(evt)
+    #------------ FOR DATA LOCATION ----------# 
+    if evt == "-LOCATION-":
+        street_name_1 = read_sample_data("STREET NAME 1")
+        street_name_2 = read_sample_data("STREET NAME 2")
+        city_state = read_sample_data("CITY AND STATE")
+        cat_location = position_correction(win_pos,50,50)
+        layout_loc = [
+            [sg.T("Street Name 1 Samples"), sg.Push(), sg.T("Street Name 2 Samples"), sg.T("City and State Samples")],
+            [sg.Listbox(street_name_1, size= (15,5), key= "-SNAMES1-"), sg.Push(), sg.Listbox(street_name_2, size= (15,5), key= "-SNAMES2-"), sg.Push(), sg.Listbox(city_state, size= (15,5), key= "-CITYSTATE-")],
+            [sg.T("Add to Column:"), sg.Combo(EXCEL_COLUMN, key = "-COLUMN-", readonly= True),sg.Push(), sg.B("Sample Reload")],
+            [sg.Push(),sg.B("OK"), sg.B("Back"), sg.Push()]
+        ]
+        cat_window = sg.Window("Location", layout_loc, font= DEFAULT_FONT, modal= True, location= cat_location)
+        #----------- DATA LOCATION LOOP ------------#
+        while True:
+            event, values = cat_window.read()
+            cat_location = cat_window.current_location()
+            if event == sg.WINDOW_CLOSED or event == "Back":
+                break
+            if event == "Sample Reload":
+                street_name_1 = read_sample_data("STREET NAME 1")
+                street_name_2 = read_sample_data("STREET NAME 2")
+                city_state = read_sample_data("CITY AND STATE")
+                cat_window.Element("-SNAMES1-").update(street_name_1)
+                cat_window.Element("-SNAMES2-").update(street_name_2)
+                cat_window.Element("-CITYSTATE-").update(city_state)
+            if event == "OK":
+                if values["-COLUMN-"] == "":
+                    sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
+                    [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 20, 40)).read(close= True)
+                else:
+                    locations = []
+                    for i in range(rows):
+                        s_number = randint(1,200)
+                        s_name_1 = choice(street_name_1)
+                        s_name_2 = choice(street_name_2)
+                        citystate = choice(city_state)
+                        postal_code = randint(10000,99999)
+                        locations.append(f"{s_number} {s_name_1} {s_name_2}, {citystate}, {postal_code}")
+                    #!!!!!!!!!!!!!   NEED TO ADD TO DF ON SELECTED COLUMN  !!!!!!!!!!!!!#
+                    #print (locations)
+                    sg.Popup("done", font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 100, 40))
+        cat_window.close()
 
 def reset(win, win_pos,theme):
     pos_reset = position_correction(win_pos,30,50)
@@ -115,21 +214,20 @@ def new_main_window(pos, theme= DEFAULT_THEME):
         [sg.MenubarCustom(menu_def)],
         [sg.B("Output directory:", key= "-BROWSEOUT-"), sg.I(key= "-OUTPUT-",size = (50,1), default_text= Path.cwd(), disabled= True)],
         [sg.HorizontalSeparator()],
-        [sg.T("Excel File Name:"), sg.I(key= "-FILENAME-", size= (30,1), default_text= "dummPy"), sg.B("Set number of rows:", key= "-SETROWS-"), sg.I(size= (5,1), disabled_readonly_background_color="Light Green",default_text= 100, key= "-ROWS-"),],
+        [sg.T("Excel File Name:"), sg.I(key= "-FILENAME-", size= (30,1), default_text= "dummPy"), sg.B("Set number of rows:", key= "-SETROWS-"), sg.I(size= (5,1), disabled_readonly_background_color="Light Green",default_text= 10, key= "-ROWS-"),],
         [sg.HorizontalSeparator()],
         [sg.Push(), sg.T("Data Types:",font= DEFAULT_FONT+ ("bold",)), sg.Push()],
-        [sg.T("First Name"), sg.Push(),sg.B("Configure", key= "-FIRSTNAME-")],
-        [sg.T("Last Name"), sg.Push(),sg.B("Configure", key= "-LASTNAME-")],
-        [sg.T("Age"), sg.Push(),sg.B("Configure", key= "-AGE-")],
-        [sg.T("Country"), sg.Push(),sg.B("Configure", key= "-COUNTRY-")],
+        [sg.T("Name and e-mail"), sg.Push(),sg.B("Configure", key= "-NAME-", disabled= True, disabled_button_color= ("#f2557a",None))],
+        [sg.T("Number"), sg.Push(),sg.B("Configure", key= "-NUMBER-", disabled= True, disabled_button_color= ("#f2557a",None))],
+        [sg.T("Location"), sg.Push(),sg.B("Configure", key= "-LOCATION-", disabled= True, disabled_button_color= ("#f2557a",None))],
         [sg.HorizontalSeparator()],
-        [sg.B("Reset"), sg.Push(), sg.B("Preview Dataframe"), sg.B("Generate", disabled= True)]
+        [sg.B("Reset"), sg.Push(), sg.B("Preview Dataframe"), sg.B("Generate", disabled= True, disabled_button_color= ("#f2557a",None))]
     ]
-    return sg.Window("test", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos,finalize=True)
+    return sg.Window("test", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos)
 
 # ---------- MAIN WINDOW AND LOGIC LOOP ----------#
 def main_window():
-    DATA_CATEGORIES = ("-FIRSTNAME-","-LASTNAME-", "-AGE-", "-COUNTRY-")
+    DATA_CATEGORIES = ("-NAME-", "-NUMBER-", "-LOCATION-")
     current_theme = DEFAULT_THEME
     window_position= (None, None)
     window = new_main_window(window_position)
@@ -153,14 +251,18 @@ def main_window():
                     sg.Window("ERROR!", [[sg.T("Please enter an integer between 1 and 9999")],
                     [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True).read(close= True)
                 else:
+                    excel_rows = int(values["-ROWS-"])
                     window.Element("-ROWS-").update(disabled= True)
                     window.Element("-SETROWS-").update(disabled= True)
+                    window.Element("-NAME-").update(disabled= False)
+                    window.Element("-NUMBER-").update(disabled= False)
+                    window.Element("-LOCATION-").update(disabled= False)
                     window.Element("Generate").update(disabled= False)
             except:
                 sg.Window("ERROR!", [[sg.T("Number of rows must be an integer")],
                 [sg.Push(), sg.OK(), sg.Push()]], font= DEFAULT_FONT, modal= True).read(close= True)
         if event in DATA_CATEGORIES :
-            configure(event,window_position)
+            configure(event, window_position, excel_rows)
         if event == "-BROWSEOUT-":
             path_temp = values["-OUTPUT-"]
             folder = sg.popup_get_folder('', no_window=True)
@@ -189,7 +291,7 @@ def main_window():
                         no_special = False
                         break
                 if no_special:
-                    #----------- !GENERATE EXCEL FILE WITH DATAFRAME DATA HERE! -----------#
+                    #!!!!!!!!!!!!!   GENERATE EXCEL FILE WITH DATAFRAME DATA HERE   !!!!!!!!!!!!!!!!!#
                     print(filename)
                
     window.close()
