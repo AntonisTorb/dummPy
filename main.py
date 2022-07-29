@@ -1,3 +1,4 @@
+from csv import writer
 from pathlib import Path  # core python module
 from random import choice, randint, uniform  # core python module
 import pandas as pd  # pip install pandas openpyxl
@@ -83,13 +84,13 @@ def configure(evt, win_pos, rows, dict):
             if event == "Add":
                 #---------- DECLARING CONDITIONS FOR  VISIBILITY ---------#
                 unspecified_column = ((values["-COLUMNNAME-"] == "" and values["-FIRSTNAME-"] == False and values["-LASTNAME-"] == False) or #--------- SEPARATE NAMES ARE NOT SELECTED AND FULLNAME COLUMN NOT SELECTED --------#
-                (values["-COLUMNFIRSTNAME-"] == "" and values["-FIRSTNAME-"]) or #--------- IF FIRST NAME SELECTED AND COLUMN NOT SELECTED --------#
-                (values["-COLUMNLASTNAME-"] == "" and values["-LASTNAME-"]) or #--------- IF LAST NAME SELECTED AND COLUMN NOT SELECTED ---------#
-                (values["-COLUMNMAIL-"] == "" and values ["-EMAIL-"])) #---------- IF EMAIL SELECTED AND COLUMN NOT SELECTED ---------#
+                    (values["-COLUMNFIRSTNAME-"] == "" and values["-FIRSTNAME-"]) or #--------- IF FIRST NAME SELECTED AND COLUMN NOT SELECTED --------#
+                    (values["-COLUMNLASTNAME-"] == "" and values["-LASTNAME-"]) or #--------- IF LAST NAME SELECTED AND COLUMN NOT SELECTED ---------#
+                    (values["-COLUMNMAIL-"] == "" and values ["-EMAIL-"])) #---------- IF EMAIL SELECTED AND COLUMN NOT SELECTED ---------#
                 same_column = ((values["-COLUMNNAME-"] == values["-COLUMNMAIL-"] and values ["-EMAIL-"] and values["-FIRSTNAME-"] == False and values["-LASTNAME-"] == False) or #---------- SEPARATE NAMES ARE NOT SELECTED, EMAIL SELECTED, AND NAME COLUMN == EMAIL COLUMN --------#
-                (values["-COLUMNFIRSTNAME-"] == values["-COLUMNMAIL-"] and values ["-EMAIL-"] and values["-FIRSTNAME-"]) or #--------- FIRST NAME AND EMAIL SELECTED AND SAME COLUMN SELECTED ---------#
-                (values["-COLUMNLASTNAME-"] == values["-COLUMNMAIL-"] and values ["-EMAIL-"] and values["-LASTNAME-"]) or #--------- LAST NAME AND EMAIL SELECTED AND SAME COLUMN SELECTED ---------#
-                (values["-COLUMNFIRSTNAME-"] == values["-COLUMNLASTNAME-"] and values ["-FIRSTNAME-"] and values["-LASTNAME-"])) #--------- FIRST NAME AND LAST NAME SELECTED AND SAME COLUMN SELECTED ---------#
+                    (values["-COLUMNFIRSTNAME-"] == values["-COLUMNMAIL-"] and values ["-EMAIL-"] and values["-FIRSTNAME-"]) or #--------- FIRST NAME AND EMAIL SELECTED AND SAME COLUMN SELECTED ---------#
+                    (values["-COLUMNLASTNAME-"] == values["-COLUMNMAIL-"] and values ["-EMAIL-"] and values["-LASTNAME-"]) or #--------- LAST NAME AND EMAIL SELECTED AND SAME COLUMN SELECTED ---------#
+                    (values["-COLUMNFIRSTNAME-"] == values["-COLUMNLASTNAME-"] and values ["-FIRSTNAME-"] and values["-LASTNAME-"])) #--------- FIRST NAME AND LAST NAME SELECTED AND SAME COLUMN SELECTED ---------#
                     
                 if (unspecified_column):
                     sg.Window("ERROR!", [[sg.T("Please specify the target Column(s)")],
@@ -364,12 +365,15 @@ def new_main_window(pos, theme= DEFAULT_THEME):
         sg.theme(theme)
     layout = [
         [sg.MenubarCustom(menu_def)],
-        [sg.B("Output directory:", key= "-BROWSEOUT-"), sg.I(key= "-OUTPUT-", size= (50,1), default_text= Path.cwd(), disabled= True)],
+        [sg.B("Output directory:", key= "-BROWSEOUT-"), sg.I(key= "-OUTPUT-", size= (40,1), default_text= Path.cwd(), disabled= True)],
         [sg.HorizontalSeparator()],
-        [sg.T("Excel File Name:"), sg.I(key= "-FILENAME-", size= (30,1), default_text= "dummPy"), sg.B("Set number of rows:", key= "-SETROWS-"), sg.I(size= (5,1), disabled_readonly_background_color="#5ebd78",default_text= 10, key= "-ROWS-"),],
+        [sg.T("Excel File Name:"), sg.Push(), sg.I(key= "-FILENAME-", size= (30,1), default_text= "dummPy")],
+        [sg.T("Excel Sheet Name:"), sg.Push(), sg.I(key= "-SHEETNAME-", size= (30,1), default_text= "Sheet1")],
         [sg.HorizontalSeparator()],
-        [sg.Push(), sg.T("Data Types:",font= DEFAULT_FONT+ ("bold",)), sg.Push()],
-        [sg.T("Name and e-mail"), sg.Push(),sg.B("Configure", key= "-NAME-", disabled= True, disabled_button_color= ("#f2557a", None))],
+        [sg.B("Set number of rows:", key= "-SETROWS-"), sg.Push(), sg.I(size= (5,1), disabled_readonly_background_color="#5ebd78", default_text= 100, key= "-ROWS-"),],
+        [sg.HorizontalSeparator()],
+        [sg.Push(), sg.T("Data Types:", font= DEFAULT_FONT+ ("bold",)), sg.Push()],
+        [sg.T("Name and e-mail"), sg.Push(), sg.B("Configure", key= "-NAME-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.T("Number"), sg.Push(),sg.B("Configure", key= "-NUMBER-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.T("Location"), sg.Push(),sg.B("Configure", key= "-LOCATION-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.HorizontalSeparator()],
@@ -436,25 +440,50 @@ def main_window():
                 preview_dataframe(dictionary, excel_rows, window_position)
         if event == "Generate":
             filename = values["-FILENAME-"]
+            sheetname = values["-SHEETNAME-"]
             #---------- CHECK FILENAME LENGTH AND FOR ILLEGAL FILENAME CHARACTERS -----------#
             if len(filename) < 1 or len(filename) > 50:
                 sg.Window("ERROR!", [[sg.T("Filename must be between 1 and 50 characters long")],
                 [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 150)).read(close= True)
+            elif len(sheetname) < 1 or len(sheetname) > 31:
+                sg.Window("ERROR!", [[sg.T("Sheet name must be between 1 and 31 characters long")],
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 150)).read(close= True)
             else:
-                pattern = ("<", ">", ":", "/", "\"", "\\", "|", "?", "*")
+                pattern1 = ("<", ">", ":", "/", "\"", "\\", "|", "?", "*")
+                pattern2= (":", "/", "\\", "?", "*", "[", "]")
                 no_special = True
-                for i in pattern:
+                for i in pattern1:
                     if i in filename:
                         sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in filename:")],
                             [sg.Push(), sg.T("<>:/\|?*"), sg.Push()],
                             [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
                         no_special = False
                         break
+                for i in pattern2:
+                    if i in sheetname:
+                        sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in sheet name:")],
+                            [sg.Push(), sg.T(":/\?*[]"), sg.Push()],
+                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
+                        no_special = False
+                        break
                 if no_special:
-                    df2 = dict_sort_for_df(dictionary,excel_rows)
-                    pd.DataFrame.from_dict(df2).to_excel(f"{filename}.xlsx", header= False, index= False)
-                    sg.Popup(f"{filename}.xlsx created", font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 140), button_color= ("#292e2a","#5ebd78"))
-
+                    df2 = dict_sort_for_df(dictionary, excel_rows)
+                    file = values["-OUTPUT-"]
+                    filepath = f"{file}\{filename}.xlsx"
+                    try:
+                        try:
+                            with pd.ExcelWriter(filepath, mode="a", if_sheet_exists= "replace") as writer:
+                                pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
+                                sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
+                        except: #---------- IF FILE DOES NOT EXIST, CREATE IT -----------#
+                            with pd.ExcelWriter(filepath) as writer:
+                                pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
+                                sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
+                    except: #----------- IF THE FILE IS OPEN ------------#
+                        sg.Window("ERROR!", [[sg.T("Please close the excel file")],
+                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
     window.close()
         
 if __name__ == "__main__":
