@@ -3,6 +3,7 @@ from pathlib import Path  # core python module
 from random import choice, randint, uniform  # core python module
 import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
+import webbrowser
 
 DEFAULT_FONT = ("Arial", 14)
 DEFAULT_THEME = "DarkTeal1"
@@ -57,9 +58,8 @@ def save_dict(dict, winpos):
     save_dir = Path.cwd()
     save_pos = position_correction(winpos, -60, 80)
     save_layout = [
-        [sg.T("Save directory:"), sg.I(key = "-SAVEDIR-", disabled= True, default_text = save_dir), sg.B("Browse")],
-        [sg.T("Filename:"), sg.Push(), sg.I(key = "-SAVEFILE-", default_text= "Save1")],
-        [sg.Push(), sg.B("Save", button_color= ("#292e2a", "#5ebd78")),  sg.B("Back", button_color= ("#ffffff", "#bf365f")), sg.Push()]
+        [sg.T("Save directory:"), sg.Push(), sg.I(key = "-SAVEDIR-", disabled= True, default_text = save_dir), sg.B("Browse")],
+        [sg.T("Filename:"), sg.I(key = "-SAVEFILE-", default_text= "Save1"), sg.B("Save", button_color= ("#292e2a", "#5ebd78")),  sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
     save_window = sg.Window("Save", save_layout, modal= True, font= DEFAULT_FONT, location= save_pos)
     while True:
@@ -264,17 +264,17 @@ def configure(evt, win_pos, rows, dict):
                                     for row in range(rows):
                                         domain = choice(domains)
                                         delta = randint(0,99)
-                                        emails[mail_col_name].append(f"{mail_lnames[i]}.{delta}@{domain}")
+                                        emails[mail_col_name].append(f"{mail_lnames[row]}.{delta}@{domain}")
                                 elif len(mail_lnames) == 0: #--------- IF LAST NAME MISSING, ONLY USE FIRST NAME FOR EMNAIL ------------#
                                     for row in range(rows):
                                         domain = choice(domains)
                                         delta = randint(0,99)
-                                        emails[mail_col_name].append(f"{mail_fnames[i]}.{delta}@{domain}")
+                                        emails[mail_col_name].append(f"{mail_fnames[row]}.{delta}@{domain}")
                                 else:
                                     for row in range(rows):
                                         domain = choice(domains)
                                         delta = randint(0,99)
-                                        emails[mail_col_name].append(f"{mail_fnames[i]}.{mail_lnames[i]}.{delta}@{domain}")
+                                        emails[mail_col_name].append(f"{mail_fnames[row]}.{mail_lnames[row]}.{delta}@{domain}")
                                 dict.update(emails) #---------- ADD THE EMAILS TO DICTIONARY ---------#
                                 sg.Window("Done", [[sg.T(f"Data added on columns {col_names} and {mail_col_name}")],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(cat_location, 200, 100)).read(close= True)
@@ -526,7 +526,7 @@ def new_main_window(pos, theme= DEFAULT_THEME):
         [sg.HorizontalSeparator()],
         [sg.B("Reset"), sg.Push(), sg.B("Preview", disabled= True, disabled_button_color= ("#f2557a", None)), sg.B("Generate", disabled= True, disabled_button_color= ("#f2557a", None), button_color= ("#292e2a","#5ebd78"))]
     ]
-    return sg.Window("test", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos)
+    return sg.Window("DummPy", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos)
 
 # ---------- MAIN WINDOW AND LOGIC LOOP ----------#
 def main_window():
@@ -544,7 +544,7 @@ def main_window():
             else:
                 pos_exit = position_correction(window_position, 170, 80)
                 exit_window = sg.Window("Exit",[
-                    [sg.T("Confirm Exit or save and exit")], 
+                    [sg.T("Confirm Exit or Save and Exit")], 
                     [sg.Push(), sg.B("Save and Exit"), sg.B("Exit", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]
                 ], font= DEFAULT_FONT, location= pos_exit, modal= True)
                 event, values = exit_window.read(close= True)
@@ -557,7 +557,7 @@ def main_window():
         if event == "-SETROWS-":
             try:
                 rows = int(values["-ROWS-"])
-                if rows < 1 or rows > 9999:
+                if rows < 1 or rows > 99999:
                     sg.Window("ERROR!", [[sg.T("Please enter an integer between 1 and 9999")],
                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 120, 80)).read(close= True)
                 else:
@@ -565,7 +565,7 @@ def main_window():
                     rows_are_set(window)
             except:
                 sg.Window("ERROR!", [[sg.T("Number of rows must be an integer")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80)).read(close= True)
         if event == "Save":
             save_cancelled = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
         if event == "Load":
@@ -575,7 +575,26 @@ def main_window():
                 rows_are_set(window)
             except: #--------- IF WE CANCEL THE LOAD, RETURNS NONE AND GIVES ERROR, SO EXCEPTION NEEDED -----------#
                 None
-        if event in DATA_CATEGORIES :
+        if event == "About":
+            url = "https://github.com/AntonisTorb/dummPy"
+            about_window = sg.Window("About", [
+                [sg.Push(), sg.T("~~DummPy~~", font= ("Arial", 30)), sg.Push()],
+                [sg.Push(), sg.T("Random Data Generator", font= ("Arial", 20)), sg.Push()],
+                [sg.Push(), sg.T("Version b_1.0"), sg.Push()],
+                [sg.HorizontalSeparator()],
+                [sg.Push(), sg.T("Github Repository", key="-URL-", enable_events= True, tooltip= url, text_color= "Blue", background_color= "Grey",font= DEFAULT_FONT + ("underline",)), sg.Push()],
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]
+            ], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 80))
+            while True:
+                event, values = about_window.read()
+                if event == sg.WINDOW_CLOSED or event == "OK":
+                    break
+                if event == "-URL-":
+                    webbrowser.open(url)
+            about_window.close()
+        if event == "Get Started":
+            webbrowser.open("https://github.com/AntonisTorb/dummPy/blob/main/User%20Guide.pdf")
+        if event in DATA_CATEGORIES:
             configure(event, window_position, excel_rows, dictionary)
         if event == "-BROWSEOUT-":
             path_temp = values["-OUTPUT-"]

@@ -14,6 +14,6 @@ An application that produces fake (dummy) data for Data analytics practice
 - ~~add save option to reset and close warnings~~ done
 - ~~create settings layout, saving and loading settings from external file~~ no need for settings file only for theme change
 - align all windows as best as possible
-- work on the menu and documentation/help
+- ~~work on the menu and documentation/help~~
 - more proofing/testing and optimization
 - additional capabilities?

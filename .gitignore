@@ -2,3 +2,5 @@
 /env
 *.txt
 !requirements.txt
+*.png
+*.docx
