@@ -9,6 +9,7 @@ DEFAULT_FONT = ("Arial", 14)
 DEFAULT_THEME = "DarkTeal1"
 PATTERN1 = ( "<" , ">" , ":" , "/" , "\"" , "\\" , "|" , "?" , "*") #--------- ILLEGAL FILE NAME CHARACTERS ----------#
 PATTERN2= ( ":" , "/" , "\\" , "?" , "*" , "[" , "]" ) #----------- ILLEGAL SHEET NAME CHARACTERS -----------#
+EXCEL_COLUMN = [chr(chNum) for chNum in list(range(ord('A'), ord('Z')+1))]#----------- LIST OF EXCEL COLUMN CHARACTERS, A TO Z ----------#
 
 # ---------- ADJUST POPUP WINDOW LOCATION ----------#
 def position_correction(winpos, dx, dy):
@@ -132,8 +133,6 @@ def load_dict(winpos):
 
 #----------- ACTION DEPENDING ON DATA TYPE SELECTED -----------#
 def configure(evt, win_pos, rows, dict):
-
-    EXCEL_COLUMN = [chr(chNum) for chNum in list(range(ord('A'), ord('Z')+1))]#----------- LIST OF EXCEL COLUMN CHARACTERS, A TO Z ----------#
     #------------ FOR DATA NAME AND EMAIL ----------# 
     if evt == "-NAME-":
         f_names = read_sample_data("FIRST NAME")
@@ -202,7 +201,7 @@ def configure(evt, win_pos, rows, dict):
                             dict.update(fnames)
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                [sg.T("between 1 and 20 characters long")],
+                                [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
                                 [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)                   
                     if values["-LASTNAME-"]: #----------- ADDING LAST NAME ---------#
                         last_col_name = values["-COLUMNLASTNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -220,7 +219,7 @@ def configure(evt, win_pos, rows, dict):
                             dict.update(lnames)
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                [sg.T("between 1 and 20 characters long")],
+                                [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
                                 [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)         
                     if values["-FIRSTNAME-"] == False and values["-LASTNAME-"] == False: # --------- ADDING FULL NAME ----------#
                         full_col_name = values["-COLUMNNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -243,7 +242,7 @@ def configure(evt, win_pos, rows, dict):
                                         [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
                                 else:
                                     sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                        [sg.T("between 1 and 20 characters long")],
+                                        [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
                                         [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
                             else: # --------- IF ADDING ONLY NAME ---------#
                                 for row in range(rows):
@@ -255,7 +254,7 @@ def configure(evt, win_pos, rows, dict):
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                    [sg.T("between 1 and 20 characters long")],
+                                    [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)                    
                     else: #----------- IF SEPERATE DATA ADDED, DETERMINE E-MAIL IF SELECTED AND SHOW CONFIRMATION -----------#
                         if values ["-EMAIL-"]: # -------- IF ADDING E-MAIL AS WELL ---------#
@@ -282,7 +281,7 @@ def configure(evt, win_pos, rows, dict):
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
                             else:
                                 sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                    [sg.T("between 1 and 20 characters long")],
+                                    [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
                         else:
                             sg.Window("Done", [[sg.T(f"Data added on column(s) {col_names}")],
@@ -511,6 +510,8 @@ def rows_are_set(win):
     win.Element("-ROWS-").update(disabled= True)
     win.Element("-SETROWS-").update(disabled= True)
     win.Element("-NAME-").update(disabled= False)
+    win.Element("-CLEARCOLUMN-").update(disabled= False)
+    win.Element("-COLUMNTOCLEAR-").update(disabled= False)
     win.Element("-NUMBER-").update(disabled= False)
     win.Element("-LOCATION-").update(disabled= False)
     win.Element("Preview").update(disabled= False)
@@ -529,7 +530,7 @@ def new_main_window(pos, theme= DEFAULT_THEME):
         [sg.T("Excel File Name:"), sg.Push(), sg.I(key= "-FILENAME-", size= (30,1), default_text= "dummPy")],
         [sg.T("Excel Sheet Name:"), sg.Push(), sg.I(key= "-SHEETNAME-", size= (30,1), default_text= "Sheet1")],
         [sg.HorizontalSeparator()],
-        [sg.B("Set number of rows:", key= "-SETROWS-"), sg.Push(), sg.I(size= (5,1), disabled_readonly_background_color="#5ebd78", default_text= 100, key= "-ROWS-"),],
+        [sg.B("Set number of rows:", key= "-SETROWS-"), sg.I(size= (5,1), disabled_readonly_background_color="#5ebd78", default_text= 100, key= "-ROWS-"), sg.Push(), sg.B("Clear Data in Column:", key= "-CLEARCOLUMN-", disabled= True, disabled_button_color= ("#f2557a", None)), sg.Combo(EXCEL_COLUMN, key = "-COLUMNTOCLEAR-", readonly= True, disabled= True)],
         [sg.HorizontalSeparator()],
         [sg.Push(), sg.T("Data Types:", font= DEFAULT_FONT+ ("bold",)), sg.Push()],
         [sg.T("Name and e-mail"), sg.Push(), sg.B("Configure", key= "-NAME-", disabled= True, disabled_button_color= ("#f2557a", None))],
@@ -586,6 +587,15 @@ def main_window():
             window.hide()
             configure(event, window_position, excel_rows, dictionary)
             window.un_hide()
+        if event == "-CLEARCOLUMN-":
+            column = values["-COLUMNTOCLEAR-"]
+            if column in dictionary.keys():
+                dictionary.pop(column, None)
+                sg.Window("ERROR!", [[sg.T(f"Data in Column {column} have been removed")],
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150)).read(close= True)             
+            else:
+                sg.Window("ERROR!", [[sg.T(f"Column {column} does not exist in dictionary")],
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150)).read(close= True)
         if event == "Save":
             if len(dictionary) == 0:
                 sg.Window("ERROR!", [[sg.T("Cannot save an empty dictionary")],
@@ -644,6 +654,9 @@ def main_window():
             elif len(sheetname) < 1 or len(sheetname) > 31:
                 sg.Window("ERROR!", [[sg.T("Sheet name must be between 1 and 31 characters long")],
                 [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150)).read(close= True)
+            elif len(dictionary) == 0:
+                sg.Window("ERROR!", [[sg.T("Cannot create empty sheet")],
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 190, 150)).read(close= True)
             else:
                 no_illegal = True
                 for illegal in PATTERN1:
@@ -664,20 +677,45 @@ def main_window():
                     df2 = dict_sort_for_df(dictionary, excel_rows)
                     file = values["-OUTPUT-"]
                     filepath = f"{file}\{filename}.xlsx"
-                    try:
-                        try:
-                            with pd.ExcelWriter(filepath, mode="a", if_sheet_exists= "replace") as writer:
-                                pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
-                                sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
-                        except: #---------- IF FILE DOES NOT EXIST, CREATE IT -----------#
-                            with pd.ExcelWriter(filepath) as writer:
-                                pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
-                                sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
-                    except: #----------- IF THE FILE IS OPEN ------------#
-                        sg.Window("ERROR!", [[sg.T("Please close the excel file")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
+                    file_exists = Path(filepath).exists()
+                    if file_exists:
+                        existing_file = pd.ExcelFile(filepath)
+                        existing_sheets = existing_file.sheet_names
+                        existing_file.close()
+                        if sheetname in existing_sheets:
+                            replace_window = sg.Window("Warning", [[sg.T(f"There is already a sheet named {sheetname} in {filename}.xlsx.")],
+                                [sg.Push(),sg.T("Would you like to replace it?"), sg.Push()],
+                                [sg.Push(), sg.B("Replace", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 60, 140))
+                            while True:
+                                event, values = replace_window.read()
+                                replace_pos = replace_window.current_location()
+                                if event == sg.WINDOW_CLOSED or event == "Cancel":
+                                    break
+                                if event == "Replace":
+                                    try:
+                                        with pd.ExcelWriter(filepath, mode="a", if_sheet_exists= "replace") as writer:
+                                            pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
+                                            sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
+                                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, -30, 60)).read(close= True)
+                                        break
+                                    except: #----------- IF THE FILE IS OPEN ------------#
+                                        sg.Window("ERROR!", [[sg.T("Please close the excel file")],
+                                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60)).read(close= True)
+                            replace_window.close()
+                        else:
+                            try:
+                                with pd.ExcelWriter(filepath, mode="a") as writer:
+                                    pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
+                                    sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
+                                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
+                            except: #----------- IF THE FILE IS OPEN ------------#
+                                sg.Window("ERROR!", [[sg.T("Please close the excel file")],
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60)).read(close= True)
+                    else: #---------- IF FILE DOES NOT EXIST, CREATE IT -----------#
+                        with pd.ExcelWriter(filepath) as writer:
+                            pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
+                            sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
+                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
     window.close()
         
 if __name__ == "__main__":
