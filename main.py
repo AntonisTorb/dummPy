@@ -23,8 +23,8 @@ def read_sample_data(sheet):
         sample = pd.read_excel("SAMPLE_DATA.xlsx", sheet_name= sheet, usecols= [0, 0], header= None).squeeze("columns")
         return sample.values.tolist()
     except:
-        sg.Window("ERROR!", [[sg.T("Sample file is missing or corrupted!")],
-            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True).read(close= True)
+        sg.Window("ERROR!", [[sg.T(f"{sheet} sample file is missing or corrupted!")],
+            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, icon= "icon.ico").read(close= True)
         return []
     
 #------------ SORT THE DICTIONARY BY KEY (COLUMN NAME) AND ADD BLANCK COLUMNS WHEN MISSING ----------#
@@ -53,7 +53,7 @@ def preview_dataframe(dict, rows, winpos):
     val =  temp_df.values.tolist()
     preview_layout = [[sg.Table(val, headings= headers, num_rows= 20, display_row_numbers= True)],
         [sg.OK(button_color= ("#292e2a", "#5ebd78"))]]
-    sg.Window("Dataframe Preview", preview_layout, modal= True, font= DEFAULT_FONT, location= winpos, grab_anywhere= True).read(close= True)
+    sg.Window("Dataframe Preview", preview_layout, modal= True, font= DEFAULT_FONT, location= winpos, grab_anywhere= True, icon= "icon.ico").read(close= True)
 
 def save_dict(dict, winpos):
     save_dir = Path.cwd()
@@ -62,7 +62,7 @@ def save_dict(dict, winpos):
         [sg.T("Save directory:"), sg.Push(), sg.I(key = "-SAVEDIR-", disabled= True, default_text = save_dir), sg.B("Browse")],
         [sg.T("Filename:"), sg.I(key = "-SAVEFILE-", default_text= "Save1"), sg.B("Save", button_color= ("#292e2a", "#5ebd78")),  sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
-    save_window = sg.Window("Save", save_layout, modal= True, font= DEFAULT_FONT, location= save_pos)
+    save_window = sg.Window("Save", save_layout, modal= True, font= DEFAULT_FONT, location= save_pos, icon= "icon.ico")
     while True:
         cancelled = False
         event, values = save_window.read()
@@ -81,7 +81,7 @@ def save_dict(dict, winpos):
                 if illegal in filename:
                     sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in filename:")],
                         [sg.Push(), sg.T("<>:/\|?*"), sg.Push()],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 125, 70)).read(close= True)
+                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 125, 70), icon= "icon.ico").read(close= True)
                     no_illegal = False
                     break
             if no_illegal:
@@ -90,7 +90,7 @@ def save_dict(dict, winpos):
                 savefile.write( str(dict))
                 savefile.close()
                 sg.Window("Saved", [[sg.T(f"Dictionary saved as {filename}.txt")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 180, 80)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 180, 80), icon= "icon.ico").read(close= True)
                 break
     save_window.close()
     return cancelled
@@ -101,7 +101,7 @@ def load_dict(winpos):
         [sg.T("Load File:"), sg.I(key = "-LOADFILE-", disabled= True), sg.B("Browse")],
         [sg.Push(), sg.B("Load", button_color= ("#292e2a", "#5ebd78"), disabled= True, disabled_button_color= ("#f2557a", None)),  sg.B("Back", button_color= ("#ffffff", "#bf365f")), sg.Push()]
     ]
-    load_window = sg.Window("Save", load_layout, modal= True, font= DEFAULT_FONT, location= load_pos)
+    load_window = sg.Window("Save", load_layout, modal= True, font= DEFAULT_FONT, location= load_pos, icon= "icon.ico")
     while True:
         event, values = load_window.read()
         load_win_location = load_window.current_location()
@@ -114,20 +114,20 @@ def load_dict(winpos):
                 load_window.Element("Load").update(disabled= False)
         if event == "Load":
             loadfile = open(file_to_load,"r")
-            temp = loadfile.readline()
+            temp_dict = loadfile.readline()
             loadfile.close()
             try:
-                dict = ast.literal_eval(temp) #----------- STRING TO DICTIONARY ----------#
+                dict = ast.literal_eval(temp_dict) #----------- STRING TO DICTIONARY ----------#
                 rows = len(next(iter(dict.values()))) - 1 #-------- MINUS 1 FOR TITLE ----------#
-                sg.Window("Saved", [[sg.T("Dictionary Loaded")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30)).read(close= True)
+                sg.Window("Loaded", [[sg.T("Dictionary Loaded")],
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30), icon= "icon.ico").read(close= True)
                 break
             except:
                 sg.Window("ERROR", [[sg.T("Save file is invalid or corrupted")],
-                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30)).read(close= True)
+                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30), icon= "icon.ico").read(close= True)
     try:
         load_window.close()
-        return rows, ast.literal_eval(temp)
+        return rows, ast.literal_eval(temp_dict)
     except: #----------- IF WE CANCEL WITHOUT LOADING -----------#
         load_window.close()
 
@@ -151,7 +151,7 @@ def configure(evt, win_pos, rows, dict):
             [sg.HorizontalSeparator()],
             [sg.B("Preview"), sg.B("Sample Reload"), sg.Push(), sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))],
         ]
-        name_window = sg.Window("Name", layout_name, font= DEFAULT_FONT, modal= True, location= pos_name)
+        name_window = sg.Window("Name and E-mail", layout_name, font= DEFAULT_FONT, modal= True, location= pos_name, icon= "icon.ico")
         #----------- DATA NAME LOOP ------------#
         while True:
             event, values = name_window.read()
@@ -180,10 +180,10 @@ def configure(evt, win_pos, rows, dict):
                     
                 if (unspecified_column):
                     sg.Window("ERROR!", [[sg.T("Please specify the target Column(s)")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 160, 100)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 160, 100), icon= "icon.ico").read(close= True)
                 elif (same_column):
                     sg.Window("ERROR!", [[sg.T("Please specify different Columns for selected data")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 100, 100)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 100, 100), icon= "icon.ico").read(close= True)
                 else: #------------ LOGIC FOR ADDING THE DATA -----------#
                     col_names = "" #--------- COLUMN NAMES FOR SEPARATE NAME VALUES, TO DECLARE CONFIRMATION --------------#
                     mail_fnames = [] #--------- IF FIRST NAMES SELECTED, VALUES SAVED TO USE FOR EMAIL GENERATION -----------#
@@ -202,7 +202,7 @@ def configure(evt, win_pos, rows, dict):
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
                                 [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)                   
+                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)                   
                     if values["-LASTNAME-"]: #----------- ADDING LAST NAME ---------#
                         last_col_name = values["-COLUMNLASTNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-LASTNAMETITLE-"]) < 21:
@@ -220,7 +220,7 @@ def configure(evt, win_pos, rows, dict):
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
                                 [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)         
+                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)         
                     if values["-FIRSTNAME-"] == False and values["-LASTNAME-"] == False: # --------- ADDING FULL NAME ----------#
                         full_col_name = values["-COLUMNNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-NAMETITLE-"]) < 21:
@@ -239,11 +239,11 @@ def configure(evt, win_pos, rows, dict):
                                     dict.update(names)
                                     dict.update(emails)
                                     sg.Window("Done", [[sg.T(f"Data added on columns {full_col_name} and {mail_col_name}")],
-                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                                 else:
                                     sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
                                         [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                             else: # --------- IF ADDING ONLY NAME ---------#
                                 for row in range(rows):
                                     first = choice(f_names)
@@ -251,11 +251,11 @@ def configure(evt, win_pos, rows, dict):
                                     names[full_col_name].append(f"{first} {last}")
                                 dict.update(names)
                                 sg.Window("Done", [[sg.T(f"Data added on column {full_col_name}")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                         else:
                             sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
                                     [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)                    
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)                    
                     else: #----------- IF SEPERATE DATA ADDED, DETERMINE E-MAIL IF SELECTED AND SHOW CONFIRMATION -----------#
                         if values ["-EMAIL-"]: # -------- IF ADDING E-MAIL AS WELL ---------#
                             mail_col_name = values["-COLUMNMAIL-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -278,14 +278,14 @@ def configure(evt, win_pos, rows, dict):
                                         emails[mail_col_name].append(f"{mail_fnames[row]}.{mail_lnames[row]}.{delta}@{domain}")
                                 dict.update(emails) #---------- ADD THE EMAILS TO DICTIONARY ---------#
                                 sg.Window("Done", [[sg.T(f"Data added on columns {col_names} and {mail_col_name}")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                             else:
                                 sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
                                     [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                         else:
                             sg.Window("Done", [[sg.T(f"Data added on column(s) {col_names}")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
         name_window.close()
     #------------ FOR DATA NUMBER ----------#    
     if evt == "-NUMBER-":
@@ -301,7 +301,7 @@ def configure(evt, win_pos, rows, dict):
             [sg.B("Clear"), sg.B("Preview"), sg.Push(),sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
         ]
         pos_num = position_correction(win_pos, 180, 80)
-        num_window = sg.Window("Number", layout_num, font= DEFAULT_FONT, modal= True, location= pos_num)
+        num_window = sg.Window("Number", layout_num, font= DEFAULT_FONT, modal= True, location= pos_num, icon= "icon.ico")
         #----------- DATA NUMBER LOOP -----------#
         while True:
             event, values = num_window.read()
@@ -317,11 +317,11 @@ def configure(evt, win_pos, rows, dict):
                 try:
                     if values["-COLUMN-"] == "":
                         sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 15, 40)).read(close= True)
+                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 15, 40), icon= "icon.ico").read(close= True)
                     else:
                         if float(values["-NUMMAX-"]) < float(values["-NUMMIN-"]):
                             sg.Window("ERROR!", [[sg.T("Please ensure that Min < Max")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 30, 40)).read(close= True)
+                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 30, 40), icon= "icon.ico").read(close= True)
                         else:
                             num_col_name = values["-COLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                             if 0 < len(values["-NUMTITLE-"]) < 21:
@@ -334,14 +334,14 @@ def configure(evt, win_pos, rows, dict):
                                         numbers[num_col_name].append(round(uniform(float(values["-NUMMIN-"]), float(values["-NUMMAX-"])), values["-DECIMALS-"]))
                                 dict.update(numbers)
                                 sg.Window("Done", [[sg.T(f"Data added on column {num_col_name}")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 50, 40)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 50, 40), icon= "icon.ico").read(close= True)
                             else:
-                                sg.Window("ERROR", [[sg.T("Please ensure the column title is")],
+                                sg.Window("ERROR", [[sg.Push(), sg.T("Please ensure the column title is"), sg.Push()],
                                     [sg.T("between 1 and 20 characters long")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 10, 40)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 10, 40), icon= "icon.ico").read(close= True)
                 except:
                     sg.Window("ERROR!", [[sg.T("Please ensure the values are numbers")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num,-10,40)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, -10, 40), icon= "icon.ico").read(close= True)
         num_window.close()
     #------------ FOR DATA LOCATION ----------# 
     if evt == "-LOCATION-":
@@ -360,7 +360,7 @@ def configure(evt, win_pos, rows, dict):
             [sg.HorizontalSeparator()],
             [sg.B("Preview"), sg.B("Sample Reload"), sg.Push(), sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
         ]
-        loc_window = sg.Window("Location", layout_loc, font= DEFAULT_FONT, modal= True, location= pos_loc)
+        loc_window = sg.Window("Location", layout_loc, font= DEFAULT_FONT, modal= True, location= pos_loc, icon= "icon.ico")
         #----------- DATA LOCATION LOOP ------------#
         while True:
             event, values = loc_window.read()
@@ -380,10 +380,10 @@ def configure(evt, win_pos, rows, dict):
                 if values["-SEPARATELOC-"]:
                     if values["-STREETCOLUMN-"] == "" or values["-CITYCOLUMN-"] == "" or values["-STATECOLUMN-"] == "":
                         sg.Window("ERROR!", [[sg.T("Please specify the target Columns")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80)).read(close= True)
+                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80), icon= "icon.ico").read(close= True)
                     elif values["-STREETCOLUMN-"] == values["-CITYCOLUMN-"] or values["-STREETCOLUMN-"] == values["-STATECOLUMN-"] or values["-STATECOLUMN-"] == values["-CITYCOLUMN-"]:
                         sg.Window("ERROR!", [[sg.T("Please specify different Columns for selected data")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 100, 100)).read(close= True)
+                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 100, 100), icon= "icon.ico").read(close= True)
                     else:
                         street_col_name = values["-STREETCOLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         city_col_name = values["-CITYCOLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -404,11 +404,11 @@ def configure(evt, win_pos, rows, dict):
                         dict.update(cities)
                         dict.update(states)
                         sg.Window("Done", [[sg.T(f"Data added on columns {street_col_name}, {city_col_name} and {state_col_name}")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80)).read(close= True)
+                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80), icon= "icon.ico").read(close= True)
                 else:
                     if values["-COLUMN-"] == "":
                         sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80)).read(close= True)
+                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80), icon= "icon.ico").read(close= True)
                     else:
                         loc_col_name = values["-COLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-LOCTITLE-"]) < 21:
@@ -422,11 +422,11 @@ def configure(evt, win_pos, rows, dict):
                                 locations[loc_col_name].append(f"{s_number} {s_name_1} {s_name_2}, {citystate}, {postal_code}")
                             dict.update(locations)
                             sg.Window("Done", [[sg.T(f"Data added on column {loc_col_name}")],
-                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 200, 80)).read(close= True)
+                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 200, 80), icon= "icon.ico").read(close= True)
                         else:
-                            sg.Window("ERROR", [[sg.T("Please ensure the column title is")],
+                            sg.Window("ERROR", [[sg.Push(), sg.T("Please ensure the column title is"), sg.Push()],
                                 [sg.T("between 1 and 20 characters long")],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80)).read(close= True)
+                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80), icon= "icon.ico").read(close= True)
         loc_window.close()
 
 def reset(win, win_pos, theme, dict):
@@ -438,7 +438,7 @@ def reset(win, win_pos, theme, dict):
     reset_window= sg.Window("WARNING!", [
         [sg.T("This will reset the app and all progress will be lost!")],
         [sg.Push(), sg.T("Would you like to save your progress?"), sg.Push()],
-        [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")),sg.Push()]], font= DEFAULT_FONT, modal= True, location= reset_position)
+        [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")),sg.Push()]], font= DEFAULT_FONT, modal= True, location= reset_position, icon= "icon.ico")
     while True:
         event, values = reset_window.read()
         reset_position = reset_window.current_location()
@@ -451,7 +451,7 @@ def reset(win, win_pos, theme, dict):
                 reset_window.close()
                 win.close()
                 window = new_main_window(win_pos, theme)
-                return window 
+                return window
         if event == "Reset":
             dict.clear()
             reset_window.close()
@@ -463,17 +463,9 @@ def reset(win, win_pos, theme, dict):
 
 def change_theme(theme, win, win_pos, dict):
     THEMES = sg.theme_list()
-    
-    def reset_operations(): #---------- REPEATING CODE -----------#
-        dict.clear()
-        theme_window.close()
-        win.close()
-        window = new_main_window(win_pos, selected_theme)
-        return selected_theme, window
-
     theme_position = position_correction(win_pos, 100, 80)
     theme_window = sg.Window("Choose theme: ",
-    [[sg.Combo(THEMES, key= "-THEME-", readonly= True, default_value= theme), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Cancel()]], font= DEFAULT_FONT, location= theme_position)
+    [[sg.Combo(THEMES, key= "-THEME-", readonly= True, default_value= theme), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Cancel()]], font= DEFAULT_FONT, modal= True, location= theme_position)
     while True:
         event, values = theme_window.read()
         theme_position = theme_window.current_location()
@@ -481,28 +473,14 @@ def change_theme(theme, win, win_pos, dict):
             break
         if event == "OK":
             selected_theme = values["-THEME-"]
-            if len(dict) == 0:
-                return reset_operations()
-            else:
-                confirm_position = position_correction(theme_position, 100, 50)
-                confirm_window = sg.Window("WARNING!",[
-                    [sg.T("This will reset the app and all progress will be lost!")],
-                    [sg.Push(), sg.T("Would you like to save your progress?"), sg.Push()],
-                    [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a", "#5ebd78")), sg.Cancel(button_color= ("#ffffff", "#bf365f")), sg.Push()]
-                ], font= DEFAULT_FONT, location= confirm_position)
-                while True:
-                    event, values = confirm_window.read()
-                    confirm_position = confirm_window.current_location()
-                    if event == sg.WINDOW_CLOSED or event == "Cancel":
-                        break
-                    if event == "Save and Reset":
-                        save_cancelled = save_dict(dict, confirm_position)
-                        if save_cancelled == False:
-                            return reset_operations()
-                    if event == "Reset":
-                        return reset_operations()
-                confirm_window.close()
-                break
+            theme_window.close()
+            win.close()
+            window = new_main_window(win_pos, selected_theme)
+            if len(dict) != 0: #------------- IF THE DICTIONARY HAS DATA, ALSO SET THE ROWS AND ENALE THE BUTTONS IN MAIN WINDOW ----------#
+                rows = len(next(iter(dict.values()))) - 1 #-------- MINUS 1 FOR TITLE ----------#
+                window["-ROWS-"].update(rows)
+                rows_are_set(window)
+            return selected_theme, window
     theme_window.close()
     return theme, win
 
@@ -539,7 +517,7 @@ def new_main_window(pos, theme= DEFAULT_THEME):
         [sg.HorizontalSeparator()],
         [sg.B("Reset"), sg.Push(), sg.B("Preview", disabled= True, disabled_button_color= ("#f2557a", None)), sg.B("Generate", disabled= True, disabled_button_color= ("#f2557a", None), button_color= ("#292e2a","#5ebd78"))]
     ]
-    return sg.Window("DummPy", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos)
+    return sg.Window("DummPy", layout, font= DEFAULT_FONT, enable_close_attempted_event= True, location= pos, icon= "icon.ico").finalize()
 
 # ---------- MAIN WINDOW AND LOGIC LOOP ----------#
 def main_window():
@@ -558,8 +536,7 @@ def main_window():
                 exit_pos = position_correction(window_position, 170, 80)
                 exit_window = sg.Window("Exit",[
                     [sg.T("Confirm Exit or Save and Exit")], 
-                    [sg.Push(), sg.B("Save and Exit"), sg.B("Exit", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]
-                ], font= DEFAULT_FONT, location= exit_pos, modal= True)
+                    [sg.Push(), sg.B("Save and Exit"), sg.B("Exit", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]], font= DEFAULT_FONT, location= exit_pos, modal= True, icon= "icon.ico")
                 event, values = exit_window.read()
                 exit_pos = exit_window.current_location()
                 if event == sg.WINDOW_CLOSED or event == "Cancel":
@@ -576,13 +553,13 @@ def main_window():
                 rows = int(values["-ROWS-"])
                 if rows < 1 or rows > 99999:
                     sg.Window("ERROR!", [[sg.T("Please enter an integer between 1 and 9999")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 120, 80)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 120, 80), icon= "icon.ico").read(close= True)
                 else:
-                    excel_rows = int(values["-ROWS-"])
+                    excel_rows = rows
                     rows_are_set(window)
             except:
                 sg.Window("ERROR!", [[sg.T("Number of rows must be an integer")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80), icon= "icon.ico").read(close= True)
         if event in DATA_CATEGORIES:
             window.hide()
             configure(event, window_position, excel_rows, dictionary)
@@ -591,15 +568,15 @@ def main_window():
             column = values["-COLUMNTOCLEAR-"]
             if column in dictionary.keys():
                 dictionary.pop(column, None)
-                sg.Window("ERROR!", [[sg.T(f"Data in Column {column} have been removed")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150)).read(close= True)             
+                sg.Window("Done", [[sg.T(f"Data in Column {column} have been removed")],
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150), icon= "icon.ico").read(close= True)             
             else:
                 sg.Window("ERROR!", [[sg.T(f"Column {column} does not exist in dictionary")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150), icon= "icon.ico").read(close= True)
         if event == "Save":
             if len(dictionary) == 0:
                 sg.Window("ERROR!", [[sg.T("Cannot save an empty dictionary")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80)).read(close= True)
+                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80), icon= "icon.ico").read(close= True)
             else:
                 save_cancelled = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
         if event == "Load":
@@ -614,11 +591,10 @@ def main_window():
             about_window = sg.Window("About", [
                 [sg.Push(), sg.T("~~DummPy~~", font= ("Arial", 30)), sg.Push()],
                 [sg.T("Random Data Generator", font= ("Arial", 20))],
-                [sg.Push(), sg.T("Version b_1.0"), sg.Push()],
+                [sg.Push(), sg.T("Version 1.0"), sg.Push()],
                 [sg.HorizontalSeparator()],
                 [sg.Push(), sg.T("Github Repository", key="-URL-", enable_events= True, tooltip= url, text_color= "Blue", background_color= "Grey",font= DEFAULT_FONT + ("underline",)), sg.Push()],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]
-            ], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 80))
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 150, 80), icon= "icon.ico")
             while True:
                 event, values = about_window.read()
                 if event == sg.WINDOW_CLOSED or event == "OK":
@@ -643,34 +619,34 @@ def main_window():
             except:
                 None
         if event == "Preview":
-                preview_dataframe(dictionary, excel_rows, window_position)
+            preview_dataframe(dictionary, excel_rows, window_position)
         if event == "Generate":
             filename = values["-FILENAME-"]
             sheetname = values["-SHEETNAME-"]
             #---------- CHECK FILENAME LENGTH AND FOR ILLEGAL FILENAME CHARACTERS -----------#
             if len(filename) < 1 or len(filename) > 50:
                 sg.Window("ERROR!", [[sg.T("File name must be between 1 and 50 characters long")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150)).read(close= True)
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150), icon= "icon.ico").read(close= True)
             elif len(sheetname) < 1 or len(sheetname) > 31:
                 sg.Window("ERROR!", [[sg.T("Sheet name must be between 1 and 31 characters long")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150)).read(close= True)
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150), icon= "icon.ico").read(close= True)
             elif len(dictionary) == 0:
                 sg.Window("ERROR!", [[sg.T("Cannot create empty sheet")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 190, 150)).read(close= True)
+                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 190, 150), icon= "icon.ico").read(close= True)
             else:
                 no_illegal = True
                 for illegal in PATTERN1:
                     if illegal in filename:
-                        sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in filename:")],
+                        sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in file name:")],
                             [sg.Push(), sg.T("<>:/\|?*"), sg.Push()],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
+                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
                         no_illegal = False
                         break
                 for illegal in PATTERN2:
                     if illegal in sheetname:
                         sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in sheet name:")],
                             [sg.Push(), sg.T(":/\?*[]"), sg.Push()],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 125, 140)).read(close= True)
+                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
                         no_illegal = False
                         break
                 if no_illegal:
@@ -685,7 +661,7 @@ def main_window():
                         if sheetname in existing_sheets:
                             replace_window = sg.Window("Warning", [[sg.T(f"There is already a sheet named {sheetname} in {filename}.xlsx.")],
                                 [sg.Push(),sg.T("Would you like to replace it?"), sg.Push()],
-                                [sg.Push(), sg.B("Replace", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 60, 140))
+                                [sg.Push(), sg.B("Replace", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 60, 140), icon= "icon.ico")
                             while True:
                                 event, values = replace_window.read()
                                 replace_pos = replace_window.current_location()
@@ -696,26 +672,26 @@ def main_window():
                                         with pd.ExcelWriter(filepath, mode="a", if_sheet_exists= "replace") as writer:
                                             pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
                                             sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
-                                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, -30, 60)).read(close= True)
+                                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, -30, 60), icon= "icon.ico").read(close= True)
                                         break
                                     except: #----------- IF THE FILE IS OPEN ------------#
                                         sg.Window("ERROR!", [[sg.T("Please close the excel file")],
-                                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60)).read(close= True)
+                                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60), icon= "icon.ico").read(close= True)
                             replace_window.close()
                         else:
                             try:
                                 with pd.ExcelWriter(filepath, mode="a") as writer:
                                     pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
                                     sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
-                                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
+                                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
                             except: #----------- IF THE FILE IS OPEN ------------#
                                 sg.Window("ERROR!", [[sg.T("Please close the excel file")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60)).read(close= True)
+                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60), icon= "icon.ico").read(close= True)
                     else: #---------- IF FILE DOES NOT EXIST, CREATE IT -----------#
                         with pd.ExcelWriter(filepath) as writer:
                             pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
                             sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.")],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140)).read(close= True)
+                                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
     window.close()
         
 if __name__ == "__main__":

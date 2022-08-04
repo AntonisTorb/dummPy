@@ -6,3 +6,4 @@
 *.docx
 *.xls*
 !SAMPLE_DATA.xlsx
+/release

@@ -1,19 +1,8 @@
-# dummPy
-An application that produces fake (dummy) data for Data analytics practice
+# DummPy
+An application that produces fake (dummy) data for Data analysis practice.
 
+Please take a look at the [User Guide](https://github.com/AntonisTorb/dummPy/blob/main/User%20Guide.pdf) before using the application, where you can find instructions on how to run and use the application. If you discover any bugs or have any suggestions, feel free to open an issue. Pull requests are welcome as well, but since I am a begginer (it took me 2 weeks and a lot of google searches to reach version 1.0.0), I might not fully understand your code, so please be patient :) 
 
-## TODO:
-
-- ~~decide all data types and add the layout for each~~ done possibly maybe add date/time data type
-- ~~settle on the final layout~~ done ~~possibly~~
-- ~~create configuration layout for all data types~~ done, ~~!!! maybe a way to add location data separately !!!~~ done
-- ~~introduce functionality to read sample data types from external file~~ done
-- ~~introduce functionality to create columns of data randomly from the sample and append at the correct position in the dataframe~~ done
-- ~~introduce functionality to create excel file and populate sheet based on dataframe contents~~ done
-- ~~introduce functionality to save dataframe to external file and load on new session~~ done
-- ~~add save option to reset and close warnings~~ done
-- ~~create settings layout, saving and loading settings from external file~~ no need for settings file only for theme change
-- align all windows as best as possible
-- ~~work on the menu and documentation/help~~
-- more proofing/testing and optimization
-- additional capabilities?
+## For the future:
+- Add Date as a configurable data type.
+- More proofing/testing and optimization.
