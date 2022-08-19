@@ -30,13 +30,13 @@ def read_sample_data(sheet):
 #------------ SORT THE DICTIONARY BY KEY (COLUMN NAME) AND ADD BLANCK COLUMNS WHEN MISSING ----------#
 def dict_sort_for_df(dict, rows):
     new_dict = {}
-    max_col = 0
+    last_col = 0
     #-------- DETERMINE THE LAST COLUMN OF DICT ---------#
     for key in dict:
-        if ord(key) > max_col:
-            max_col = ord(key)
+        if ord(key) > last_col:
+            last_col = ord(key)
     #----------- CREATE A LIST WITH COLUMN NAMES UP TO THE LAST -----------#
-    excel = [chr(ch_num) for ch_num in list(range(ord('A'), max_col + 1))]
+    excel = [chr(ch_num) for ch_num in list(range(ord('A'), last_col + 1))]
     #----------- NEW DICT WITH VALUES FROM PREVIOUS, SORTED, AND WITH BLANCK COLUMNS WHERE THERE IS NO DATA ---------#
     for col in excel:
         try:
