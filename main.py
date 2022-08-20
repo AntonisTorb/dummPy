@@ -18,13 +18,28 @@ def position_correction(winpos, dx, dy):
     corrected[1] += dy
     return tuple(corrected)
 
-def read_sample_data(sheet):
+def one_line_error_handler(text, position):
+    sg.Window("ERROR!", [
+        [sg.Push(), sg.T(text), sg.Push()],
+        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]
+    ], font= DEFAULT_FONT, location= position, modal= True, icon= "icon.ico").read(close= True)
+
+def two_line_error_handler(text1, text2, position):
+    sg.Window("ERROR!", [
+        [sg.Push(), sg.T(text1), sg.Push()],
+        [sg.Push(), sg.T(text2), sg.Push()],
+        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]
+    ], font= DEFAULT_FONT, modal= True, location= position, icon= "icon.ico").read(close= True)
+
+def read_sample_data(sheet, winpos):
     try: 
         sample = pd.read_excel("SAMPLE_DATA.xlsx", sheet_name= sheet, usecols= [0, 0], header= None).squeeze("columns")
         return sample.values.tolist()
-    except:
-        sg.Window("ERROR!", [[sg.T(f"{sheet} sample file is missing or corrupted!")],
-            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, icon= "icon.ico").read(close= True)
+    except FileNotFoundError: #------------ SAMPLE_DATA.XLSX IS MISSING -----------#
+        one_line_error_handler("Sample file is missing!", position_correction(winpos, 150, 100))
+        return []
+    except ValueError: #----------- SHEET IS MISSING ------------#
+        one_line_error_handler(f"{sheet} sample SHEET is missing", position_correction(winpos, 150, 100))
         return []
     
 #------------ SORT THE DICTIONARY BY KEY (COLUMN NAME) AND ADD BLANCK COLUMNS WHEN MISSING ----------#
@@ -79,9 +94,7 @@ def save_dict(dict, winpos):
             filename = values["-SAVEFILE-"]
             for illegal in PATTERN1:
                 if illegal in filename:
-                    sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in filename:")],
-                        [sg.Push(), sg.T("<>:/\|?*"), sg.Push()],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 125, 70), icon= "icon.ico").read(close= True)
+                    two_line_error_handler("Please do not use any of the following characters in filename:", "<>:/\|?*", position_correction(save_win_location, 125, 70))
                     no_illegal = False
                     break
             if no_illegal:
@@ -113,31 +126,26 @@ def load_dict(winpos):
                 load_window["-LOADFILE-"].update(Path(file_to_load))
                 load_window.Element("Load").update(disabled= False)
         if event == "Load":
-            loadfile = open(file_to_load,"r")
-            temp_dict = loadfile.readline()
-            loadfile.close()
+            with open(file_to_load,"r") as loadfile:
+                temp_dict = loadfile.readline()
             try:
                 dict = ast.literal_eval(temp_dict) #----------- STRING TO DICTIONARY ----------#
                 rows = len(next(iter(dict.values()))) - 1 #-------- MINUS 1 FOR TITLE ----------#
                 sg.Window("Loaded", [[sg.T("Dictionary Loaded")],
                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30), icon= "icon.ico").read(close= True)
                 break
-            except:
-                sg.Window("ERROR", [[sg.T("Save file is invalid or corrupted")],
-                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(load_win_location, 250, 30), icon= "icon.ico").read(close= True)
-    try:
-        load_window.close()
-        return rows, ast.literal_eval(temp_dict)
-    except: #----------- IF WE CANCEL WITHOUT LOADING -----------#
-        load_window.close()
+            except: #----------- UNABLE TO SPECIFY AS NO MESSAGE IS SHOWN, JUST LOAD WINDOW BECOMES UNRESPONSIVE IF INVALID INPUT (NOT A DICTIONARY) -------------#
+                one_line_error_handler("Save file is invalid or corrupted", position_correction(load_win_location, 250, 30))
+    load_window.close()
+    return rows, dict
 
 #----------- ACTION DEPENDING ON DATA TYPE SELECTED -----------#
 def configure(evt, win_pos, rows, dict):
     #------------ FOR DATA NAME AND EMAIL ----------# 
     if evt == "-NAME-":
-        f_names = read_sample_data("FIRST NAME")
-        l_names = read_sample_data("LAST NAME")
-        domains = read_sample_data("EMAIL DOMAIN")
+        f_names = read_sample_data("FIRST NAME", win_pos)
+        l_names = read_sample_data("LAST NAME", win_pos)
+        domains = read_sample_data("EMAIL DOMAIN", win_pos)
         pos_name = position_correction(win_pos, -25, 80)
         layout_name = [
             [sg.T("First Name Samples"), sg.Push(), sg.T("Last Name Samples"), sg.Push(), sg.T("E-mail Domain Samples")],
@@ -159,9 +167,9 @@ def configure(evt, win_pos, rows, dict):
             if event == sg.WINDOW_CLOSED or event == "Back":
                 break
             if event == "Sample Reload":
-                f_names = read_sample_data("FIRST NAME")
-                l_names = read_sample_data("LAST NAME")
-                domains = read_sample_data("EMAIL DOMAIN")
+                f_names = read_sample_data("FIRST NAME", pos_name)
+                l_names = read_sample_data("LAST NAME", pos_name)
+                domains = read_sample_data("EMAIL DOMAIN", pos_name)
                 name_window.Element("-FNAMES-").update(f_names)
                 name_window.Element("-LNAMES-").update(l_names)
                 name_window.Element("-DOMAINS-").update(domains)
@@ -179,11 +187,9 @@ def configure(evt, win_pos, rows, dict):
                     (values["-COLUMNFIRSTNAME-"] == values["-COLUMNLASTNAME-"] and values ["-FIRSTNAME-"] and values["-LASTNAME-"])) #--------- FIRST NAME AND LAST NAME SELECTED AND SAME COLUMN SELECTED ---------#
                     
                 if (unspecified_column):
-                    sg.Window("ERROR!", [[sg.T("Please specify the target Column(s)")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 160, 100), icon= "icon.ico").read(close= True)
+                    one_line_error_handler("Please specify the target Column(s)", position_correction(pos_name, 160, 100))
                 elif (same_column):
-                    sg.Window("ERROR!", [[sg.T("Please specify different Columns for selected data")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 100, 100), icon= "icon.ico").read(close= True)
+                    one_line_error_handler("Please specify different Columns for selected data", position_correction(pos_name, 100, 100))
                 else: #------------ LOGIC FOR ADDING THE DATA -----------#
                     col_names = "" #--------- COLUMN NAMES FOR SEPARATE NAME VALUES, TO DECLARE CONFIRMATION --------------#
                     mail_fnames = [] #--------- IF FIRST NAMES SELECTED, VALUES SAVED TO USE FOR EMAIL GENERATION -----------#
@@ -200,9 +206,7 @@ def configure(evt, win_pos, rows, dict):
                             col_names = first_col_name
                             dict.update(fnames)
                         else:
-                            sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)                   
+                            two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", position_correction(pos_name, 200, 100))
                     if values["-LASTNAME-"]: #----------- ADDING LAST NAME ---------#
                         last_col_name = values["-COLUMNLASTNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-LASTNAMETITLE-"]) < 21:
@@ -218,9 +222,7 @@ def configure(evt, win_pos, rows, dict):
                                 col_names = f"{col_names}, {last_col_name}"
                             dict.update(lnames)
                         else:
-                            sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)         
+                            two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", position_correction(pos_name, 200, 100))
                     if values["-FIRSTNAME-"] == False and values["-LASTNAME-"] == False: # --------- ADDING FULL NAME ----------#
                         full_col_name = values["-COLUMNNAME-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-NAMETITLE-"]) < 21:
@@ -241,9 +243,7 @@ def configure(evt, win_pos, rows, dict):
                                     sg.Window("Done", [[sg.T(f"Data added on columns {full_col_name} and {mail_col_name}")],
                                         [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                                 else:
-                                    sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                        [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
+                                    two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", position_correction(pos_name, 200, 100))
                             else: # --------- IF ADDING ONLY NAME ---------#
                                 for row in range(rows):
                                     first = choice(f_names)
@@ -253,9 +253,7 @@ def configure(evt, win_pos, rows, dict):
                                 sg.Window("Done", [[sg.T(f"Data added on column {full_col_name}")],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                         else:
-                            sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                    [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)                    
+                            two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", position_correction(pos_name, 200, 100))
                     else: #----------- IF SEPERATE DATA ADDED, DETERMINE E-MAIL IF SELECTED AND SHOW CONFIRMATION -----------#
                         if values ["-EMAIL-"]: # -------- IF ADDING E-MAIL AS WELL ---------#
                             mail_col_name = values["-COLUMNMAIL-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -280,9 +278,7 @@ def configure(evt, win_pos, rows, dict):
                                 sg.Window("Done", [[sg.T(f"Data added on columns {col_names} and {mail_col_name}")],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
                             else:
-                                sg.Window("ERROR", [[sg.T("Please ensure the column titles are")],
-                                    [sg.Push(), sg.T("between 1 and 20 characters long"), sg.Push()],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
+                                two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", position_correction(pos_name, 200, 100))
                         else:
                             sg.Window("Done", [[sg.T(f"Data added on column(s) {col_names}")],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_name, 200, 100), icon= "icon.ico").read(close= True)
@@ -316,12 +312,10 @@ def configure(evt, win_pos, rows, dict):
             if event == "Add":
                 try:
                     if values["-COLUMN-"] == "":
-                        sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 15, 40), icon= "icon.ico").read(close= True)
+                        one_line_error_handler("Please specify the target Column", position_correction(pos_num, 15, 40))
                     else:
                         if float(values["-NUMMAX-"]) < float(values["-NUMMIN-"]):
-                            sg.Window("ERROR!", [[sg.T("Please ensure that Min < Max")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 30, 40), icon= "icon.ico").read(close= True)
+                            one_line_error_handler("Please ensure that Min < Max", position_correction(pos_num, 30, 40))
                         else:
                             num_col_name = values["-COLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                             if 0 < len(values["-NUMTITLE-"]) < 21:
@@ -336,18 +330,15 @@ def configure(evt, win_pos, rows, dict):
                                 sg.Window("Done", [[sg.T(f"Data added on column {num_col_name}")],
                                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 50, 40), icon= "icon.ico").read(close= True)
                             else:
-                                sg.Window("ERROR", [[sg.Push(), sg.T("Please ensure the column title is"), sg.Push()],
-                                    [sg.T("between 1 and 20 characters long")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, 10, 40), icon= "icon.ico").read(close= True)
-                except:
-                    sg.Window("ERROR!", [[sg.T("Please ensure the values are numbers")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_num, -10, 40), icon= "icon.ico").read(close= True)
+                                two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", position_correction(pos_num, -50, 40))
+                except ValueError: #---------- NOT A NUMBER IN INPUT FIELDS, OR FLOAT IF 0 DECIMALS SELECTED ----------#
+                    two_line_error_handler("Please ensure the input values are numbers", "Please ensure that if no decimals are selected, values are integers", position_correction(pos_num, -130, 40))
         num_window.close()
     #------------ FOR DATA LOCATION ----------# 
     if evt == "-LOCATION-":
-        street_name_1 = read_sample_data("STREET NAME 1")
-        street_name_2 = read_sample_data("STREET NAME 2")
-        city_and_state = read_sample_data("CITY AND STATE")
+        street_name_1 = read_sample_data("STREET NAME 1", win_pos)
+        street_name_2 = read_sample_data("STREET NAME 2", win_pos)
+        city_and_state = read_sample_data("CITY AND STATE", win_pos)
         pos_loc = position_correction(win_pos, -10, 80)
         layout_loc = [
             [sg.T("Street Name 1 Samples"), sg.Push(), sg.T("Street Name 2 Samples"), sg.T("City and State Samples")],
@@ -368,9 +359,9 @@ def configure(evt, win_pos, rows, dict):
             if event == sg.WINDOW_CLOSED or event == "Back":
                 break
             if event == "Sample Reload":
-                street_name_1 = read_sample_data("STREET NAME 1")
-                street_name_2 = read_sample_data("STREET NAME 2")
-                city_and_state = read_sample_data("CITY AND STATE")
+                street_name_1 = read_sample_data("STREET NAME 1", pos_loc)
+                street_name_2 = read_sample_data("STREET NAME 2", pos_loc)
+                city_and_state = read_sample_data("CITY AND STATE", pos_loc)
                 loc_window.Element("-SNAMES1-").update(street_name_1)
                 loc_window.Element("-SNAMES2-").update(street_name_2)
                 loc_window.Element("-CITYSTATE-").update(city_and_state)
@@ -379,11 +370,9 @@ def configure(evt, win_pos, rows, dict):
             if event == "Add":
                 if values["-SEPARATELOC-"]:
                     if values["-STREETCOLUMN-"] == "" or values["-CITYCOLUMN-"] == "" or values["-STATECOLUMN-"] == "":
-                        sg.Window("ERROR!", [[sg.T("Please specify the target Columns")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80), icon= "icon.ico").read(close= True)
+                        one_line_error_handler("Please specify the target Columns", position_correction(pos_loc, 180, 80))
                     elif values["-STREETCOLUMN-"] == values["-CITYCOLUMN-"] or values["-STREETCOLUMN-"] == values["-STATECOLUMN-"] or values["-STATECOLUMN-"] == values["-CITYCOLUMN-"]:
-                        sg.Window("ERROR!", [[sg.T("Please specify different Columns for selected data")],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 100, 100), icon= "icon.ico").read(close= True)
+                        one_line_error_handler("Please specify different Columns for selected data", position_correction(pos_loc, 100, 100))
                     else:
                         street_col_name = values["-STREETCOLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         city_col_name = values["-CITYCOLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
@@ -407,8 +396,7 @@ def configure(evt, win_pos, rows, dict):
                             [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80), icon= "icon.ico").read(close= True)
                 else:
                     if values["-COLUMN-"] == "":
-                        sg.Window("ERROR!", [[sg.T("Please specify the target Column")],
-                        [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 180, 80), icon= "icon.ico").read(close= True)
+                        one_line_error_handler("Please specify the target Column", position_correction(pos_loc, 180, 80))
                     else:
                         loc_col_name = values["-COLUMN-"] #--------- COLUMN NAME TO USE AS DICTIONARY KEY---------#
                         if 0 < len(values["-LOCTITLE-"]) < 21:
@@ -424,9 +412,7 @@ def configure(evt, win_pos, rows, dict):
                             sg.Window("Done", [[sg.T(f"Data added on column {loc_col_name}")],
                                         [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 200, 80), icon= "icon.ico").read(close= True)
                         else:
-                            sg.Window("ERROR", [[sg.Push(), sg.T("Please ensure the column title is"), sg.Push()],
-                                [sg.T("between 1 and 20 characters long")],
-                                [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(pos_loc, 150, 80), icon= "icon.ico").read(close= True)
+                            two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", position_correction(pos_loc, 150, 80))
         loc_window.close()
 
 def reset(win, win_pos, theme, dict):
@@ -484,7 +470,7 @@ def change_theme(theme, win, win_pos, dict):
     theme_window.close()
     return theme, win
 
-def rows_are_set(win):
+def rows_are_set(win): #----------- DISABLE/ENABLE ELEMENTS WHEN ROWS ARE SET -----------#
     win.Element("-ROWS-").update(disabled= True)
     win.Element("-SETROWS-").update(disabled= True)
     win.Element("-NAME-").update(disabled= False)
@@ -552,14 +538,12 @@ def main_window():
             try:
                 rows = int(values["-ROWS-"])
                 if rows < 1 or rows > 99999:
-                    sg.Window("ERROR!", [[sg.T("Please enter an integer between 1 and 9999")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 120, 80), icon= "icon.ico").read(close= True)
+                    one_line_error_handler("Please enter an integer between 1 and 9999", position_correction(window_position, 120, 80))
                 else:
                     excel_rows = rows
                     rows_are_set(window)
-            except:
-                sg.Window("ERROR!", [[sg.T("Number of rows must be an integer")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80), icon= "icon.ico").read(close= True)
+            except ValueError: #----------- NOT AN INTEGER -----------#
+                one_line_error_handler("Number of rows must be an integer", position_correction(window_position, 170, 80))
         if event in DATA_CATEGORIES:
             window.hide()
             configure(event, window_position, excel_rows, dictionary)
@@ -571,20 +555,18 @@ def main_window():
                 sg.Window("Done", [[sg.T(f"Data in Column {column} have been removed")],
                     [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150), icon= "icon.ico").read(close= True)             
             else:
-                sg.Window("ERROR!", [[sg.T(f"Column {column} does not exist in dictionary")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 150), icon= "icon.ico").read(close= True)
+                one_line_error_handler(f"Column {column} does not exist in dictionary", position_correction(window_position, 170, 150))
         if event == "Save":
             if len(dictionary) == 0:
-                sg.Window("ERROR!", [[sg.T("Cannot save an empty dictionary")],
-                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 170, 80), icon= "icon.ico").read(close= True)
+                one_line_error_handler("Cannot save an empty dictionary", position_correction(window_position, 170, 80))
             else:
-                save_cancelled = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
+                _ = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
         if event == "Load":
             try:
                 excel_rows, dictionary = load_dict(window_position)
                 window["-ROWS-"].update(excel_rows)
                 rows_are_set(window)
-            except: #--------- IF WE CANCEL THE LOAD, RETURNS NONE AND GIVES ERROR, SO EXCEPTION NEEDED -----------#
+            except UnboundLocalError: #--------- IF WE CANCEL THE LOAD WE GET AN ERROR, SO EXCEPTION NEEDED AND RETURNING NONE -----------#
                 None
         if event == "About":
             url = "https://github.com/AntonisTorb/dummPy"
@@ -614,10 +596,7 @@ def main_window():
         if event == "Theme":
             current_theme, window = change_theme(current_theme, window, window_position, dictionary)
         if event in ("Reset", "New"):
-            try:
-                window = reset(window, window_position, current_theme, dictionary)
-            except:
-                None
+            window = reset(window, window_position, current_theme, dictionary)
         if event == "Preview":
             preview_dataframe(dictionary, excel_rows, window_position)
         if event == "Generate":
@@ -625,28 +604,21 @@ def main_window():
             sheetname = values["-SHEETNAME-"]
             #---------- CHECK FILENAME LENGTH AND FOR ILLEGAL FILENAME CHARACTERS -----------#
             if len(filename) < 1 or len(filename) > 50:
-                sg.Window("ERROR!", [[sg.T("File name must be between 1 and 50 characters long")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150), icon= "icon.ico").read(close= True)
+                one_line_error_handler("File name must be between 1 and 50 characters long", position_correction(window_position, 80, 150))
             elif len(sheetname) < 1 or len(sheetname) > 31:
-                sg.Window("ERROR!", [[sg.T("Sheet name must be between 1 and 31 characters long")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 80, 150), icon= "icon.ico").read(close= True)
+                one_line_error_handler("Sheet name must be between 1 and 31 characters long", position_correction(window_position, 80, 150))
             elif len(dictionary) == 0:
-                sg.Window("ERROR!", [[sg.T("Cannot create empty sheet")],
-                [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 190, 150), icon= "icon.ico").read(close= True)
+                one_line_error_handler("Cannot create empty sheet", position_correction(window_position, 190, 150))
             else:
                 no_illegal = True
                 for illegal in PATTERN1:
                     if illegal in filename:
-                        sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in file name:")],
-                            [sg.Push(), sg.T("<>:/\|?*"), sg.Push()],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
+                        two_line_error_handler("Please do not use any of the following characters in file name:", "<>:/\|?*", position_correction(window_position, 50, 140))
                         no_illegal = False
                         break
                 for illegal in PATTERN2:
                     if illegal in sheetname:
-                        sg.Window("ERROR!", [[sg.T("Please do not use any of the following characters in sheet name:")],
-                            [sg.Push(), sg.T(":/\?*[]"), sg.Push()],
-                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
+                        two_line_error_handler("Please do not use any of the following characters in sheet name:", ":/\?*[]", location= position_correction(window_position, 50, 140))
                         no_illegal = False
                         break
                 if no_illegal:
@@ -674,9 +646,8 @@ def main_window():
                                             sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
                                                 [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, -30, 60), icon= "icon.ico").read(close= True)
                                         break
-                                    except: #----------- IF THE FILE IS OPEN ------------#
-                                        sg.Window("ERROR!", [[sg.T("Please close the excel file")],
-                                            [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60), icon= "icon.ico").read(close= True)
+                                    except PermissionError: #----------- IF THE FILE IS OPEN ------------#
+                                        one_line_error_handler("Please close the excel file", position_correction(replace_pos, 125, 60))
                             replace_window.close()
                         else:
                             try:
@@ -684,9 +655,8 @@ def main_window():
                                     pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
                                     sg.Window("Done", [[sg.T(f"Data created in Sheet named {sheetname} in file named {filename}.xlsx.")],
                                         [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(window_position, 50, 140), icon= "icon.ico").read(close= True)
-                            except: #----------- IF THE FILE IS OPEN ------------#
-                                sg.Window("ERROR!", [[sg.T("Please close the excel file")],
-                                    [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(replace_pos, 125, 60), icon= "icon.ico").read(close= True)
+                            except PermissionError: #----------- IF THE FILE IS OPEN ------------#
+                                one_line_error_handler("Please close the excel file", position_correction(replace_pos, 125, 60))
                     else: #---------- IF FILE DOES NOT EXIST, CREATE IT -----------#
                         with pd.ExcelWriter(filepath) as writer:
                             pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheetname)
