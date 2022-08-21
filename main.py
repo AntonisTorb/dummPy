@@ -11,6 +11,40 @@ PATTERN1 = ( "<" , ">" , ":" , "/" , "\"" , "\\" , "|" , "?" , "*") #--------- I
 PATTERN2= ( ":" , "/" , "\\" , "?" , "*" , "[" , "]" ) #----------- ILLEGAL SHEET NAME CHARACTERS -----------#
 EXCEL_COLUMN = [chr(chNum) for chNum in list(range(ord('A'), ord('Z')+1))]#----------- LIST OF EXCEL COLUMN CHARACTERS, A TO Z ----------#
 
+#------------ CLASS TO READ, STORE AND RELOAD THE SAMPLE DATA ------------#
+class read_sample_data:
+
+    data = {'FIRST NAME': [], 'LAST NAME': [], 'EMAIL DOMAIN': [], 'STREET NAME 1': [], 'STREET NAME 2': [], 'CITY AND STATE': []}
+    
+    def read_all(self): #--------- READ ALL SAMPLE DATA INITIALLY ---------#
+        try:
+            sample_file = pd.ExcelFile("SAMPLE_DATA.xlsx")
+            sheets = self.data.keys() #--------- SHEET NAMES ARE PREDETERMINED -----------#
+            for sheet in sheets:
+                try:
+                    sample_sheet = pd.read_excel(sample_file, sheet_name= sheet, usecols= [0, 0], header= None).squeeze("columns").values.tolist()
+                    self.data[sheet] = sample_sheet  
+                except ValueError: #----------- SHEET IS MISSING IN "SAMPLE_DATA.XLSX" FILE------------#
+                    one_line_error_handler(f"{sheet} sample sheet is missing", (None, None))  
+        except FileNotFoundError: #------------ "SAMPLE_DATA.XLSX" FILE IS MISSING FROM SCRIPT/EXECUTABLE DIRECTORY -----------#
+            one_line_error_handler("Sample file is missing!", (None, None))
+
+    def read_datatype(self, datatype, winpos): #----------- RELOADING SAMPLE DATA ----------#
+        match datatype: #---------- DETERMINE THE DATATYPE TO RELOAD, NO NEED TO RELOAD THE ENTIRE FILE AGAIN ------------#
+            case "NAME":
+                sheets = ["FIRST NAME", "LAST NAME", "EMAIL DOMAIN"]
+            case "LOCATION":
+                sheets = ["STREET NAME 1", "STREET NAME 2", "CITY AND STATE"]
+        try:
+            for sheet in sheets:
+                try:
+                    self.data[sheet] = pd.read_excel("SAMPLE_DATA.xlsx", sheet_name= sheet, usecols= [0, 0], header= None).squeeze("columns")
+                except ValueError: #----------- SHEET IS MISSING IN "SAMPLE_DATA.XLSX" FILE------------#
+                    one_line_error_handler(f"{sheet} sample SHEET is missing", position_correction(winpos, 150, 100))
+                    self.data[sheet] = []
+        except FileNotFoundError: #------------ "SAMPLE_DATA.XLSX" FILE IS MISSING FROM SCRIPT/EXECUTABLE DIRECTORY -----------#
+            one_line_error_handler("Sample file is missing!", position_correction(winpos, 150, 100))
+
 # ---------- ADJUST POPUP WINDOW LOCATION ----------#
 def position_correction(winpos, dx, dy):
     corrected = list(winpos)
@@ -31,17 +65,6 @@ def two_line_error_handler(text1, text2, position):
         [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]
     ], font= DEFAULT_FONT, modal= True, location= position, icon= "icon.ico").read(close= True)
 
-def read_sample_data(sheet, winpos):
-    try: 
-        sample = pd.read_excel("SAMPLE_DATA.xlsx", sheet_name= sheet, usecols= [0, 0], header= None).squeeze("columns")
-        return sample.values.tolist()
-    except FileNotFoundError: #------------ SAMPLE_DATA.XLSX IS MISSING -----------#
-        one_line_error_handler("Sample file is missing!", position_correction(winpos, 150, 100))
-        return []
-    except ValueError: #----------- SHEET IS MISSING ------------#
-        one_line_error_handler(f"{sheet} sample SHEET is missing", position_correction(winpos, 150, 100))
-        return []
-    
 #------------ SORT THE DICTIONARY BY KEY (COLUMN NAME) AND ADD BLANCK COLUMNS WHEN MISSING ----------#
 def dict_sort_for_df(dict, rows):
     new_dict = {}
@@ -56,7 +79,7 @@ def dict_sort_for_df(dict, rows):
     for col in excel:
         try:
             new_dict[col] = dict[col]
-        except: #---------- IF THE COLUMN DOES NOT EXIST IN DICT ----------#
+        except KeyError: #---------- IF THE COLUMN DOES NOT EXIST IN DICT, ADD BLANKS ----------#
             new_dict[col] = []
             for row in range(rows + 1):
                 new_dict[col].append("")
@@ -70,14 +93,14 @@ def preview_dataframe(dict, rows, winpos):
         [sg.OK(button_color= ("#292e2a", "#5ebd78"))]]
     sg.Window("Dataframe Preview", preview_layout, modal= True, font= DEFAULT_FONT, location= winpos, grab_anywhere= True, icon= "icon.ico").read(close= True)
 
+#----------- SAVE CURRENT DICTIONARY IN EXTERNAL TEXT FILE ----------#
 def save_dict(dict, winpos):
     save_dir = Path.cwd()
-    save_pos = position_correction(winpos, -60, 80)
     save_layout = [
         [sg.T("Save directory:"), sg.Push(), sg.I(key = "-SAVEDIR-", disabled= True, default_text = save_dir), sg.B("Browse")],
         [sg.T("Filename:"), sg.I(key = "-SAVEFILE-", default_text= "Save1"), sg.B("Save", button_color= ("#292e2a", "#5ebd78")),  sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
-    save_window = sg.Window("Save", save_layout, modal= True, font= DEFAULT_FONT, location= save_pos, icon= "icon.ico")
+    save_window = sg.Window("Save", save_layout, modal= True, font= DEFAULT_FONT, location= position_correction(winpos, -60, 80), icon= "icon.ico")
     while True:
         cancelled = False
         event, values = save_window.read()
@@ -99,9 +122,8 @@ def save_dict(dict, winpos):
                     break
             if no_illegal:
                 filepath = Path(values["-SAVEDIR-"]) / f"{filename}.txt"
-                savefile = open(filepath,"w")
-                savefile.write( str(dict))
-                savefile.close()
+                with open(filepath,"w") as savefile:
+                    savefile.write(str(dict))
                 sg.Window("Saved", [[sg.T(f"Dictionary saved as {filename}.txt")],
                     [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(save_win_location, 180, 80), icon= "icon.ico").read(close= True)
                 break
@@ -109,12 +131,11 @@ def save_dict(dict, winpos):
     return cancelled
 
 def load_dict(winpos):
-    load_pos = position_correction(winpos, -40, 80)
     load_layout = [
         [sg.T("Load File:"), sg.I(key = "-LOADFILE-", disabled= True), sg.B("Browse")],
         [sg.Push(), sg.B("Load", button_color= ("#292e2a", "#5ebd78"), disabled= True, disabled_button_color= ("#f2557a", None)),  sg.B("Back", button_color= ("#ffffff", "#bf365f")), sg.Push()]
     ]
-    load_window = sg.Window("Save", load_layout, modal= True, font= DEFAULT_FONT, location= load_pos, icon= "icon.ico")
+    load_window = sg.Window("Save", load_layout, modal= True, font= DEFAULT_FONT, location= position_correction(winpos, -40, 80), icon= "icon.ico")
     while True:
         event, values = load_window.read()
         load_win_location = load_window.current_location()
@@ -140,12 +161,12 @@ def load_dict(winpos):
     return rows, dict
 
 #----------- ACTION DEPENDING ON DATA TYPE SELECTED -----------#
-def configure(evt, win_pos, rows, dict):
+def configure(evt, win_pos, rows, sample, dict):
     #------------ FOR DATA NAME AND EMAIL ----------# 
     if evt == "-NAME-":
-        f_names = read_sample_data("FIRST NAME", win_pos)
-        l_names = read_sample_data("LAST NAME", win_pos)
-        domains = read_sample_data("EMAIL DOMAIN", win_pos)
+        f_names = sample.data["FIRST NAME"]
+        l_names = sample.data["LAST NAME"]
+        domains = sample.data["EMAIL DOMAIN"]
         pos_name = position_correction(win_pos, -25, 80)
         layout_name = [
             [sg.T("First Name Samples"), sg.Push(), sg.T("Last Name Samples"), sg.Push(), sg.T("E-mail Domain Samples")],
@@ -167,9 +188,10 @@ def configure(evt, win_pos, rows, dict):
             if event == sg.WINDOW_CLOSED or event == "Back":
                 break
             if event == "Sample Reload":
-                f_names = read_sample_data("FIRST NAME", pos_name)
-                l_names = read_sample_data("LAST NAME", pos_name)
-                domains = read_sample_data("EMAIL DOMAIN", pos_name)
+                sample.read_datatype("NAME", pos_name)
+                f_names = sample.data["FIRST NAME"]
+                l_names = sample.data["LAST NAME"]
+                domains = sample.data["EMAIL DOMAIN"]
                 name_window.Element("-FNAMES-").update(f_names)
                 name_window.Element("-LNAMES-").update(l_names)
                 name_window.Element("-DOMAINS-").update(domains)
@@ -336,9 +358,9 @@ def configure(evt, win_pos, rows, dict):
         num_window.close()
     #------------ FOR DATA LOCATION ----------# 
     if evt == "-LOCATION-":
-        street_name_1 = read_sample_data("STREET NAME 1", win_pos)
-        street_name_2 = read_sample_data("STREET NAME 2", win_pos)
-        city_and_state = read_sample_data("CITY AND STATE", win_pos)
+        street_name_1 = sample.data["STREET NAME 1"]
+        street_name_2 = sample.data["STREET NAME 2"]
+        city_and_state = sample.data["CITY AND STATE"]
         pos_loc = position_correction(win_pos, -10, 80)
         layout_loc = [
             [sg.T("Street Name 1 Samples"), sg.Push(), sg.T("Street Name 2 Samples"), sg.T("City and State Samples")],
@@ -359,9 +381,10 @@ def configure(evt, win_pos, rows, dict):
             if event == sg.WINDOW_CLOSED or event == "Back":
                 break
             if event == "Sample Reload":
-                street_name_1 = read_sample_data("STREET NAME 1", pos_loc)
-                street_name_2 = read_sample_data("STREET NAME 2", pos_loc)
-                city_and_state = read_sample_data("CITY AND STATE", pos_loc)
+                sample.read_datatype("LOCATION", pos_loc)
+                street_name_1 = sample.data["STREET NAME 1"]
+                street_name_2 = sample.data["STREET NAME 2"]
+                city_and_state = sample.data["CITY AND STATE"]
                 loc_window.Element("-SNAMES1-").update(street_name_1)
                 loc_window.Element("-SNAMES2-").update(street_name_2)
                 loc_window.Element("-CITYSTATE-").update(city_and_state)
@@ -415,16 +438,15 @@ def configure(evt, win_pos, rows, dict):
                             two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", position_correction(pos_loc, 150, 80))
         loc_window.close()
 
-def reset(win, win_pos, theme, dict):
-    if len(dict) == 0:
+def reset(win, win_pos, theme, dict, saved_dict):
+    if len(dict) == 0 or dict == saved_dict: #----------- IF THE DICTIONAY IS EMPTY, OR HAS BEEN LAST SAVED OR LOADED, RESET IS INSTANT ------------#
         win.close()
         window = new_main_window(win_pos, theme)
         return window
-    reset_position = position_correction(win_pos, 80, 80)   
     reset_window= sg.Window("WARNING!", [
         [sg.T("This will reset the app and all progress will be lost!")],
         [sg.Push(), sg.T("Would you like to save your progress?"), sg.Push()],
-        [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")),sg.Push()]], font= DEFAULT_FONT, modal= True, location= reset_position, icon= "icon.ico")
+        [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")),sg.Push()]], font= DEFAULT_FONT, modal= True, location= position_correction(win_pos, 80, 80)  , icon= "icon.ico")
     while True:
         event, values = reset_window.read()
         reset_position = reset_window.current_location()
@@ -432,7 +454,7 @@ def reset(win, win_pos, theme, dict):
             break
         if event == "Save and Reset":
             save_cancelled = save_dict(dict, position_correction(reset_position, -80, 0))
-            if save_cancelled == False:
+            if not save_cancelled:
                 dict.clear()
                 reset_window.close()
                 win.close()
@@ -511,12 +533,16 @@ def main_window():
     current_theme = DEFAULT_THEME
     window_position= (None, None)
     window = new_main_window(window_position)
-    dictionary= {}               
+    sample_data = read_sample_data()
+    sample_data.read_all()
+    dictionary= {}
+    last_saved = {}
+
     while True: #------------ MAIN LOOP -------------#
         event, values = window.read()
         window_position = window.current_location()
         if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT or event == "Exit":
-            if len(dictionary) == 0: #--------- IMMEDIATE EXIT ----------#
+            if len(dictionary) == 0 or dictionary == last_saved: #--------- IMMEDIATE EXIT ----------#
                 break
             else:
                 exit_pos = position_correction(window_position, 170, 80)
@@ -530,7 +556,7 @@ def main_window():
                 if event == "Save and Exit":
                     exit_window.close()
                     save_cancelled = save_dict(dictionary, position_correction(exit_pos, -160, 10))
-                    if save_cancelled == False: 
+                    if not save_cancelled:
                         break
                 if event == "Exit":
                     break
@@ -546,7 +572,7 @@ def main_window():
                 one_line_error_handler("Number of rows must be an integer", position_correction(window_position, 170, 80))
         if event in DATA_CATEGORIES:
             window.hide()
-            configure(event, window_position, excel_rows, dictionary)
+            configure(event, window_position, excel_rows, sample_data, dictionary)
             window.un_hide()
         if event == "-CLEARCOLUMN-":
             column = values["-COLUMNTOCLEAR-"]
@@ -560,10 +586,13 @@ def main_window():
             if len(dictionary) == 0:
                 one_line_error_handler("Cannot save an empty dictionary", position_correction(window_position, 170, 80))
             else:
-                _ = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
+                save_cancelled = save_dict(dictionary, window_position) #--------- UNUSED VARIABLE, JUST NEED THE OPERATIONS HERE, NOT THE RETURNED VALUE ---------#
+                if not save_cancelled:
+                    last_saved = dictionary
         if event == "Load":
             try:
                 excel_rows, dictionary = load_dict(window_position)
+                last_saved = dictionary
                 window["-ROWS-"].update(excel_rows)
                 rows_are_set(window)
             except UnboundLocalError: #--------- IF WE CANCEL THE LOAD WE GET AN ERROR, SO EXCEPTION NEEDED AND RETURNING NONE -----------#
@@ -596,7 +625,7 @@ def main_window():
         if event == "Theme":
             current_theme, window = change_theme(current_theme, window, window_position, dictionary)
         if event in ("Reset", "New"):
-            window = reset(window, window_position, current_theme, dictionary)
+            window = reset(window, window_position, current_theme, dictionary, last_saved)
         if event == "Preview":
             preview_dataframe(dictionary, excel_rows, window_position)
         if event == "Generate":
