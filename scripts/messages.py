@@ -1,5 +1,5 @@
 import PySimpleGUI as sg  # pip install pysimplegui
-import global_constants
+import scripts.global_constants as global_constants
 
 # ---------- shorter error message -----#
 def one_line_error_handler(text, position):

@@ -2,8 +2,8 @@ import webbrowser  # core python module
 import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
 from pathlib import Path  # core python module
-import global_constants
-import output_to_external
+import scripts.global_constants as global_constants
+import scripts.output_to_external as output_to_external
 
 # ---------- adjust popup window location -----#
 def position_correction(win_pos, dx, dy):

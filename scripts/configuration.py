@@ -1,8 +1,8 @@
 from random import choice, randint, uniform  # core python module
 import PySimpleGUI as sg  # pip install pysimplegui
-import operations
-import messages
-import global_constants
+import scripts.operations as operations
+import scripts.messages as messages
+import scripts.global_constants as global_constants
 
 #----- called if we are adding e-mail address, repeat operations -----#
 def email_generation(domains, dict, column, row, *, seperate, column2= None):
