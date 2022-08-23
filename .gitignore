@@ -7,3 +7,4 @@
 *.xls*
 !SAMPLE_DATA.xlsx
 /release
+__pycache__

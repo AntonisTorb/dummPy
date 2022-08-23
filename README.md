@@ -6,3 +6,18 @@ Please take a look at the [User Guide](https://github.com/AntonisTorb/dummPy/blo
 ## For the future:
 - Add Date as a configurable data type.
 - More proofing/testing and optimization.
+
+## Recent changes (v1.0.1):
+- Major refactoring of code.</br>
+  - Reduced function length across the board by refactoring the code into seperate functions.
+  - Reduced main file length by creating separate files to be imported.
+- Improved error handling.
+- Improved loading of sample data.</br>
+	- Sample data are now loaded on startup.
+- Added a way to check if the existing dictionary has been last saved or loaded, in order to improve exit and reset operations.</br>
+	- Now if the dictionary has been last saved or loaded, exit/reset operations are instant.
+- Removed variables that were only used once in the saving and loading operations.
+- Replaced "if" statements with "match" statements in all event handling instances.
+- Improved file opening with the proper syntax so closing is no longer necessary after opening.
+- Remaning of variables to be more uniform across the code.
+- Further commented the code for context.
