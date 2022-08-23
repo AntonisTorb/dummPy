@@ -1,9 +1,9 @@
 from pathlib import Path  # core python module
 import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
-import operations
-import global_constants
-import messages
+import scripts.operations as operations
+import scripts.global_constants as global_constants
+import scripts.messages as messages
 
 #----- save current dictionary in external text file -----#
 def save_dict(dict, win_pos):

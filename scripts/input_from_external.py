@@ -2,9 +2,9 @@ import ast  # core python module
 from pathlib import Path  # core python module
 import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
-import operations
-import messages
-import global_constants
+import scripts.operations as operations
+import scripts.messages as messages
+import scripts.global_constants as global_constants
 
 
 #----- class to read, store and reload the sample data -----#
