@@ -103,6 +103,7 @@ def change_theme(theme, win, win_pos, dict):
                 return selected_theme, window
     theme_window.close()
     return theme, win #----- if canceling theme change, return the current theme and main window -----# 
+
 #----- main window setup for intialization and reset -----#
 def new_main_window(win_pos= (None, None), theme= global_constants.DEFAULT_THEME):
     menu_def = [["File", ["New", "---", "Load", "Save", "---", "Theme", "---", "Exit"]], 
@@ -120,8 +121,9 @@ def new_main_window(win_pos= (None, None), theme= global_constants.DEFAULT_THEME
         [sg.HorizontalSeparator()],
         [sg.Push(), sg.T("Data Types:", font= global_constants.DEFAULT_FONT+ ("bold",)), sg.Push()],
         [sg.T("Name and e-mail"), sg.Push(), sg.B("Configure", key= "-NAME-", disabled= True, disabled_button_color= ("#f2557a", None))],
-        [sg.T("Number"), sg.Push(),sg.B("Configure", key= "-NUMBER-", disabled= True, disabled_button_color= ("#f2557a", None))],
-        [sg.T("Location"), sg.Push(),sg.B("Configure", key= "-LOCATION-", disabled= True, disabled_button_color= ("#f2557a", None))],
+        [sg.T("Number"), sg.Push(), sg.B("Configure", key= "-NUMBER-", disabled= True, disabled_button_color= ("#f2557a", None))],
+        [sg.T("Location"), sg.Push(), sg.B("Configure", key= "-LOCATION-", disabled= True, disabled_button_color= ("#f2557a", None))],
+        [sg.T("Date"), sg.Push(), sg.B("Configure", key= "-DATE-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.HorizontalSeparator()],
         [sg.B("Reset"), sg.Push(), sg.B("Preview", disabled= True, disabled_button_color= ("#f2557a", None)), sg.B("Generate", disabled= True, disabled_button_color= ("#f2557a", None), button_color= ("#292e2a","#5ebd78"))]
     ]
@@ -156,6 +158,7 @@ def rows_are_set(win):
     win.Element("-COLUMNTOCLEAR-").update(disabled= False)
     win.Element("-NUMBER-").update(disabled= False)
     win.Element("-LOCATION-").update(disabled= False)
+    win.Element("-DATE-").update(disabled= False)
     win.Element("Preview").update(disabled= False)
     win.Element("Generate").update(disabled= False)
 

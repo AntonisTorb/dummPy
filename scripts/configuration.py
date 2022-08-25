@@ -1,10 +1,11 @@
 from random import choice, randint, uniform  # core python module
+from datetime import date, timedelta  # core python module
 import PySimpleGUI as sg  # pip install pysimplegui
 import scripts.operations as operations
 import scripts.messages as messages
 import scripts.global_constants as global_constants
 
-#----- called if we are adding e-mail address, repeat operations -----#
+#----- configuration of the e-mail address in the name and e-mail data type -----#
 def email_generation(domains, dict, column, row, *, seperate, column2= None):
     domain = choice(domains)
     delta = randint(0,99)
@@ -84,7 +85,7 @@ def configure_name_email(win_pos, rows, sample, dict):
                     columns_of_names = "" #----- columns where name data were added, to compose confirmation message-----#
                     if values["-FULLNAME-"]: # --------- adding full name -----#
                         col_full_name = values["-COLUMNNAME-"] #----- column name to use as dictionary key-----#
-                        if len(values["-NAMETITLE-"]) < 0 or len(values["-NAMETITLE-"]) > 21:
+                        if len(values["-NAMETITLE-"]) < 1 or len(values["-NAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
                         else: #----- operations if all checks pass -----#
                             names = {col_full_name:[values["-NAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
@@ -96,7 +97,7 @@ def configure_name_email(win_pos, rows, sample, dict):
                             dict.update(names)
                     if values["-FIRSTNAME-"]: #----- adding first name -----#
                         col_first_name = values["-COLUMNFIRSTNAME-"] #----- column name to use as dictionary key-----#
-                        if len(values["-FIRSTNAMETITLE-"]) < 0 or len(values["-FIRSTNAMETITLE-"]) > 21:
+                        if len(values["-FIRSTNAMETITLE-"]) < 1 or len(values["-FIRSTNAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
                         else: #----- operations if all checks pass -----#
                             fnames = {col_first_name:[values["-FIRSTNAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
@@ -107,7 +108,7 @@ def configure_name_email(win_pos, rows, sample, dict):
                             dict.update(fnames)
                     if values["-LASTNAME-"]: #----- adding last name -----#
                         col_last_name = values["-COLUMNLASTNAME-"] #----- column name to use as dictionary key-----#
-                        if len(values["-LASTNAMETITLE-"]) < 0 or len(values["-LASTNAMETITLE-"]) > 21:
+                        if len(values["-LASTNAMETITLE-"]) < 1 or len(values["-LASTNAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
                         else: #----- operations if all checks pass -----#
                             lnames = {col_last_name:[values["-LASTNAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
@@ -121,7 +122,7 @@ def configure_name_email(win_pos, rows, sample, dict):
                             dict.update(lnames)
                     if values ["-EMAIL-"]: # -------- if adding e-mail as well -----#
                         mail_col_name = values["-COLUMNMAIL-"] #----- column name to use as dictionary key-----#
-                        if len(values["-EMAILTITLE-"]) < 0 or len(values["-EMAILTITLE-"]) > 21:
+                        if len(values["-EMAILTITLE-"]) < 1 or len(values["-EMAILTITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
                         else:
                             emails = {mail_col_name:[values["-EMAILTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
@@ -178,19 +179,19 @@ def configure_number(win_pos, rows, dict):
                         if float(values["-NUMMAX-"]) < float(values["-NUMMIN-"]):
                             messages.one_line_error_handler("Please ensure that Min < Max", operations.position_correction(pos_num, 30, 40))
                         else:
-                            num_col_name = values["-COLUMN-"] #----- column name to use as dictionary key-----#
-                            if len(values["-NUMTITLE-"]) < 0 or len(values["-NUMTITLE-"]) > 21:
+                            col_num = values["-COLUMN-"] #----- column name to use as dictionary key-----#
+                            if len(values["-NUMTITLE-"]) < 1 or len(values["-NUMTITLE-"]) > 21:
                                 messages.two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", operations.position_correction(pos_num, -50, 40))
                             else: #----- operations if all checks pass -----#
-                                numbers = {num_col_name:[values["-NUMTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
+                                numbers = {col_num:[values["-NUMTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
                                 if values["-DECIMALS-"] == 0:
                                     for row in range (rows):
-                                        numbers[num_col_name].append(randint(int(values["-NUMMIN-"]), int(values["-NUMMAX-"])))
+                                        numbers[col_num].append(randint(int(values["-NUMMIN-"]), int(values["-NUMMAX-"])))
                                 else:
                                     for row in range (rows):
-                                        numbers[num_col_name].append(round(uniform(float(values["-NUMMIN-"]), float(values["-NUMMAX-"])), values["-DECIMALS-"]))
+                                        numbers[col_num].append(round(uniform(float(values["-NUMMIN-"]), float(values["-NUMMAX-"])), values["-DECIMALS-"]))
                                 dict.update(numbers)
-                                messages.operation_successful(f"Data added on column {num_col_name}", operations.position_correction(pos_num, 50, 40))
+                                messages.operation_successful(f"Data added on column {col_num}", operations.position_correction(pos_num, 50, 40))
                 except ValueError: #----- not a number in input fields, or float if 0 decimals selected -----#
                     messages.two_line_error_handler("Please ensure the input values are numbers", "Please ensure that if no decimals are selected, values are integers", operations.position_correction(pos_num, -130, 40))
     num_window.close()
@@ -243,20 +244,20 @@ def configure_location(win_pos, rows, sample, dict):
                     if values["-COLUMN-"] == "":
                         messages.one_line_error_handler("Please specify the target Column", operations.position_correction(pos_loc, 180, 80))
                     else:
-                        loc_col_name = values["-COLUMN-"] #----- column name to use as dictionary key-----#
-                        if len(values["-LOCTITLE-"]) < 0 or len(values["-LOCTITLE-"]) > 21:
+                        loc_col = values["-COLUMN-"] #----- column name to use as dictionary key-----#
+                        if len(values["-LOCTITLE-"]) < 1 or len(values["-LOCTITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", operations.position_correction(pos_loc, 150, 80))
                         else:
-                            locations = {loc_col_name:[values["-LOCTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
+                            locations = {loc_col:[values["-LOCTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
                             for row in range(rows):
                                 s_number = randint(1,200)
                                 s_name_1 = choice(street_name_1)
                                 s_name_2 = choice(street_name_2)
                                 citystate = choice(city_and_state)
                                 postal_code = randint(10000, 99999)
-                                locations[loc_col_name].append(f"{s_number} {s_name_1} {s_name_2}, {citystate}, {postal_code}")
+                                locations[loc_col].append(f"{s_number} {s_name_1} {s_name_2}, {citystate}, {postal_code}")
                             dict.update(locations)
-                            messages.operation_successful(f"Data added on column {loc_col_name}", operations.position_correction(pos_loc, 200, 80))
+                            messages.operation_successful(f"Data added on column {loc_col}", operations.position_correction(pos_loc, 200, 80))
                 if values["-SEPARATELOC-"]:
                     if values["-STREETCOLUMN-"] == "" or values["-CITYCOLUMN-"] == "" or values["-STATECOLUMN-"] == "":
                         messages.one_line_error_handler("Please specify the target Columns", operations.position_correction(pos_loc, 180, 80))
@@ -284,3 +285,163 @@ def configure_location(win_pos, rows, sample, dict):
                         messages.operation_successful(f"Data added on columns {street_col_name}, {city_col_name} and {state_col_name}", operations.position_correction(pos_loc, 150, 80))         
     loc_window.close()
 
+#----- when year is configured in date data type, update the day element if there are transitions between leap and non leap years -----#
+def update_day_for_leap_year_transitions(day_element, val, win, days):
+    RANGE = [day_element for day_element in range (1, days + 1)]
+    try:
+        selected_day = int(val[day_element])
+    except ValueError: #----- if the day has not been selected yet -----#
+        selected_day = ""
+    win.Element(day_element).update(values= RANGE)
+    try:
+        if selected_day <= days: #----- if the existing value is less than the maximum of the new range, maintain it -----#
+            win.Element(day_element).update(selected_day)
+    except TypeError: #----- cannot perform comparisons between string and int, if selected_day from value error exception above -----#
+        win.Element(day_element).update("")     
+
+#----- configuration of the year in date data type -----#
+def configure_year(year_element, month_element, day_element, val, win, year_set):
+    if val[month_element] == "": #----- initial setting -----#
+        win.Element(month_element).update(disabled= False)
+    if val[month_element] == 2: #----- if the year_element changes while the month_element is set to February, we might have to update the days range due to leap years -----#
+        if val[year_element] % 4 == 0 and not year_set % 4 == 0: #----- changing from non leap year_element to leap year_element -----#
+            update_day_for_leap_year_transitions(day_element, val, win, days= 29)
+        if not val[year_element] % 4 == 0 and year_set % 4 == 0: #----- changing from leap year_element to non leap year_element -----#
+            update_day_for_leap_year_transitions(day_element, val, win, days= 28)
+    return val[year_element]
+
+#----- configuration of the month in date data type -----#
+def configure_month(year_element, month_element, day_element, val, win):
+    if val[month_element] in (1,3,5,7,8,10,12): #----- set to 31 day month_element -----#
+        days = 31
+    elif val[month_element] in (4,6,9,11): #----- set to 30 day month_element -----#
+        days = 30
+    elif val[month_element] == 2: #----- for February set to 29 or 28 days based on year_element -----#
+        leap_year = val[year_element] % 4 == 0
+        if leap_year:
+            days = 29
+        else:
+            days = 28
+    DAY_RANGE = [day for day in range(1, days + 1)]
+    try:
+        selected_day = int(val[day_element])
+    except ValueError:
+        selected_day = 32
+    win.Element(day_element).update(values= DAY_RANGE, disabled= False)
+    if selected_day <= days:
+        win.Element(day_element).update(selected_day)
+
+def determine_format(user_input):
+    match user_input: #----- matching user input format to code format -----#
+        case "MM":
+            return "%m"
+        case "Month":
+            return "%B"
+        case "YYYY":
+            return "%Y"
+        case "YY":
+            return "%y"
+        case "Day/MM/Year":
+            return "{day_format}/{month_format}/{year_format}"
+        case "Year/MM/Day":
+            return "{year_format}/{month_format}/{day_format}"
+        case "Day-MM-Year":
+            return "{day_format}-{month_format}-{year_format}"
+        case "Year-MM-Day":
+            return "{year_format}-{month_format}-{day_format}"
+        case "Day Month Year":
+            return "{day_format} {month_format} {year_format}"
+        case "Month Day Year":
+            return "{month_format} {day_format} {year_format}"
+
+#----- configure date generation and storage based on input -----#
+def configure_date(win_pos, rows, dict):
+    YEAR_RANGE = [year for year in range(1900, 2101)]
+    MONTH_RANGE = [month for month in range (1, 13)]
+    MONTH_FORMATS = ("MM", "Month")
+    YEAR_FORMATS = ("YYYY", "YY")
+    DATE_FORMATS_MONTH_INT = ("Day/MM/Year", "Year/MM/Day", "Day-MM-Year", "Year-MM-Day")
+    DATE_FORMATS_MONTH_STR = ("Day Month Year", "Month Day Year")
+    layout_date = [
+        [sg.T("", size = 10), sg.T("YYYY", size = 5, justification= "center"), sg.T(" /"), sg.T("MM", size = 3, justification= "center"), sg.T(" /"), sg.T("DD", size = 3, justification= "center"), sg.Push()],
+        [sg.T("Start:", size = 10), sg.Combo(YEAR_RANGE, size= 5, key= "-MINYEAR-", enable_events= True, readonly= True), sg.Combo(MONTH_RANGE, size= 4, key= "-MINMONTH-", enable_events= True, disabled= True, readonly= True), sg.Combo(values= [""], size= 4, key= "-MINDAY-", disabled= True, readonly= True), sg.Push()],
+        [sg.T("Finish:", size = 10), sg.Combo(YEAR_RANGE, size= 5, key= "-MAXYEAR-", enable_events= True, readonly= True), sg.Combo(MONTH_RANGE, size= 4, key= "-MAXMONTH-", enable_events= True, disabled= True, readonly= True), sg.Combo(values= [""], size= 4, key= "-MAXDAY-", disabled= True, readonly= True), sg.Push()],
+        [sg.HorizontalSeparator()],
+        [sg.T("Add to Column:"), sg.Push(), sg.Combo(global_constants.EXCEL_COLUMN, key = "-COLUMN-", readonly= True)],
+        [sg.T("with title:"), sg.Push(), sg.I(size= (20, 1), key= "-DATETITLE-", default_text= "Date")],
+        [sg.HorizontalSeparator()],
+        [sg.T("Set the formats for:")],
+        [sg.T("Month:"), sg.Push(), sg.Combo(MONTH_FORMATS, size = 5, key= "-MONTHFORMAT-", readonly= True, default_value= MONTH_FORMATS[0], enable_events= True)],
+        [sg.T("Year:"), sg.Push(),sg.Combo(YEAR_FORMATS, size = 5, key= "-YEARFORMAT-", readonly= True, default_value= YEAR_FORMATS[0])],
+        [sg.T("Date:"), sg.Push(),sg.Combo(DATE_FORMATS_MONTH_INT, size = 13, key= "-DATEFORMAT-", readonly= True, default_value= DATE_FORMATS_MONTH_INT[0])],
+        [sg.HorizontalSeparator()],
+        [sg.B("Clear"), sg.B("Preview"), sg.Push(),sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
+    ]
+    pos_date = operations.position_correction(win_pos, 140, 80)
+    date_window = sg.Window("Date", layout_date, font= global_constants.DEFAULT_FONT, modal= True, location= pos_date, icon= "icon.ico")
+    min_year_set = 0 #----- used for leap year transition calculations -----#
+    max_year_set = 0 #----- used for leap year transition calculations -----#
+    #----- data date loop -----#
+    while True:
+        event, values = date_window.read()
+        pos_date = date_window.current_location()
+        match event: #----- actions to perform based on event -----#
+            case sg.WINDOW_CLOSED | "Back":
+                break
+            case "Clear": #----- restart with all default values in UI -----#
+                date_window.close()
+                configure_date(operations.position_correction(pos_date, -140, -80), rows, dict)
+                break
+            case "Preview":
+                operations.preview_dataframe(dict, rows, pos_date)
+            case "-MINYEAR-":
+                min_year_set = configure_year("-MINYEAR-", "-MINMONTH-", "-MINDAY-", values, date_window, min_year_set)
+            case "-MAXYEAR-":
+                max_year_set = configure_year("-MAXYEAR-", "-MAXMONTH-", "-MAXDAY-", values, date_window, max_year_set)
+            case "-MINMONTH-":
+                configure_month("-MINYEAR-", "-MINMONTH-", "-MINDAY-", values, date_window)
+            case "-MAXMONTH-":
+                configure_month("-MAXYEAR-", "-MAXMONTH-", "-MAXDAY-", values, date_window)
+            case "-MONTHFORMAT-":
+                if values["-MONTHFORMAT-"] == "Month":
+                    date_window.Element("-DATEFORMAT-").update(DATE_FORMATS_MONTH_STR[0], values= DATE_FORMATS_MONTH_STR)
+                elif values["-MONTHFORMAT-"] == "MM":
+                    date_window.Element("-DATEFORMAT-").update(DATE_FORMATS_MONTH_INT[0], values= DATE_FORMATS_MONTH_INT)
+            case "Add":
+                if values["-COLUMN-"] == "":
+                    messages.one_line_error_handler("Please specify the target Column", operations.position_correction(pos_date, 25, 80))
+                else:
+                    try:
+                        min_year = values["-MINYEAR-"]
+                        min_month = values["-MINMONTH-"]
+                        min_day = values["-MINDAY-"]
+                        max_year = values["-MAXYEAR-"]
+                        max_month = values["-MAXMONTH-"]
+                        max_day = values["-MAXDAY-"]
+                        min_date = date(min_year, min_month, min_day)
+                        max_date = date(max_year, max_month, max_day)
+                        if min_date > max_date:
+                            messages.two_line_error_handler("Please ensure that the start date", "is before the finish date", operations.position_correction(pos_date, 30, 80))
+                        else: #----- logic for adding the data -----#
+                            col_date = values["-COLUMN-"] #----- column name to use as dictionary key-----#
+                            if len(values["-DATETITLE-"]) < 1 or len(values["-DATETITLE-"]) > 21:
+                                messages.two_line_error_handler("Please ensure the column title is", "between 1 and 20 characters long", operations.position_correction(pos_date, 25, 80))
+                            else: #----- operations if all checks pass -----#
+                                dates = {col_date:[values["-DATETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
+                                delta_date = max_date - min_date
+                                month_format_input = values["-MONTHFORMAT-"]
+                                year_format_input = values["-YEARFORMAT-"]
+                                date_format_input = values["-DATEFORMAT-"]
+                                day_format = "%d"
+                                month_format = determine_format(month_format_input)
+                                year_format = determine_format(year_format_input)
+                                date_format = determine_format(date_format_input).format(day_format= day_format, month_format= month_format, year_format= year_format) #eval(determine_format(date_format_input)) #----- evaluate the f-string -----#
+                                for row in range(rows):
+                                    random_day = randint(0, delta_date.days)
+                                    random_date = date.strftime(min_date + timedelta(days= random_day), date_format)
+                                    dates[col_date].append(random_date)
+                                dict.update(dates)
+                                messages.operation_successful(f"Data added on column {col_date}", operations.position_correction(pos_date, 70, 80))
+                    except TypeError:
+                        messages.one_line_error_handler("Please ensure that all the date values have been populated.", operations.position_correction(pos_date, -80, 80))
+    date_window.close()
