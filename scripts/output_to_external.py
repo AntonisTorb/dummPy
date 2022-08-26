@@ -103,4 +103,3 @@ def excel_file_generation(file_name, sheet_name, folder, dict, win_pos, rows):
                 with pd.ExcelWriter(filepath) as writer:
                     pd.DataFrame.from_dict(df2).to_excel(writer, header= False, index= False, sheet_name= sheet_name)
                 messages.operation_successful(f"Data created in Sheet named {sheet_name} in file named {file_name}.xlsx.", operations.position_correction(win_pos, 50, 140))
-

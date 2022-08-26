@@ -20,4 +20,3 @@ def two_line_error_handler(text1, text2, position):
 def operation_successful(text, position):
     sg.Window("Done", [[sg.T(text)],
             [sg.Push(), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Push()]], font= global_constants.DEFAULT_FONT, modal= True, location= position, icon= "icon.ico").read(close= True)
-

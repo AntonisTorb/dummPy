@@ -1,4 +1,3 @@
-import ast  # core python module
 from pathlib import Path  # core python module
 import pandas as pd  # pip install pandas openpyxl
 import PySimpleGUI as sg  # pip install pysimplegui
@@ -63,7 +62,7 @@ def load_dict(win_pos):
                 with open(file_to_load,"r") as loadfile:
                     temp_dict = loadfile.readline()
                 try:
-                    dict = ast.literal_eval(temp_dict) #----- string to dictionary -----#
+                    dict = eval(temp_dict) #----- string to dictionary -----#
                     rows = len(next(iter(dict.values()))) - 1 #----- minus 1 for title -----#
                     messages.operation_successful("Dictionary Loaded", operations.position_correction(load_win_location, 250, 30))
                     break
