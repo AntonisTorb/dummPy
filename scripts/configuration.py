@@ -5,15 +5,6 @@ import scripts.operations as operations
 import scripts.messages as messages
 import scripts.global_constants as global_constants
 
-#----- configuration of the e-mail address in the name and e-mail data type -----#
-def email_generation(domains, dict, column, row, *, seperate, column2= None):
-    domain = choice(domains)
-    delta = randint(0,99)
-    name1 = dict[column][row]
-    name2 = ""
-    if seperate: #----- if adding seperate first name and last name, we need to include both for the emial generation -----#
-        name2 = f"{dict[column2][row]}"
-    return f"{name1}{name2}{delta}@{domain}".replace(" ", "").lower() #----- replacing blancks if we added full name, and lowercase -----#
 
 #----- configure name and email address generation and storage based on input -----#
 def configure_name_email(win_pos, rows, sample, dict):
@@ -21,6 +12,39 @@ def configure_name_email(win_pos, rows, sample, dict):
     last_names = sample.data["LAST NAME"]
     domains = sample.data["EMAIL DOMAIN"]
     pos_name = operations.position_correction(win_pos, -25, 80)
+
+    def name_generation(column, title, columns_string, *, fnames= [], lnames= []):
+        names_dict = {column:[title]} #----- column as key in dictionary and title as first element of associated list -----#
+        for row in range(rows):
+            if len(fnames) != 0:
+                random_f_name = choice(fnames)
+            else:
+                random_f_name = ""
+            if len(lnames) != 0:
+                random_l_name = choice(lnames)
+            else:
+                random_l_name = ""
+            random_name = f"{random_f_name} {random_l_name}"
+            names_dict[column].append(random_name)
+        if len(columns_string) == 0: #----- if no column for first name -----#
+            columns_string = column
+        else: #----- else append it to the existing one -----#
+            columns_string = f"{columns_string}, {column}"
+        return names_dict, columns_string
+
+    #----- generation of the e-mail addresses -----#
+    def email_generation(domains, column_email, title, column_name, *, seperate, column_name_2= None):
+        emails_dict = {column_email:[title]}
+        for row in range(1, rows + 1):
+            domain = choice(domains)
+            delta = randint(0,99)
+            name1 = dict[column_name][row]
+            name2 = ""
+            if seperate: #----- if adding seperate first name and last name, we need to include both for the emial generation -----#
+                name2 = f"{dict[column_name_2][row]}"
+            random_email = f"{name1}{name2}{delta}@{domain}".replace(" ", "").lower() #----- replacing blanks if we added full name, and lowercase -----#
+            emails_dict[column_email].append(random_email)
+        return emails_dict
 
     layout_name = [
         [sg.T("First Name Samples"), sg.Push(), sg.T("Last Name Samples"), sg.Push(), sg.T("E-mail Domain Samples")],
@@ -35,14 +59,13 @@ def configure_name_email(win_pos, rows, sample, dict):
         [sg.HorizontalSeparator()],
         [sg.B("Preview"), sg.B("Sample Reload"), sg.Push(), sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))],
     ]
-    name_window = sg.Window("Name and E-mail", layout_name, font= global_constants.DEFAULT_FONT, modal= True, location= pos_name, icon= "icon.ico")
+    name_window = sg.Window("Name and E-mail", layout_name, font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= pos_name, icon= "icon.ico")
 
-    #----- DATA NAME LOOP -----#
-    while True:
+    while True: #----- DATA NAME LOOP -----#
         event, values = name_window.read()
         pos_name = name_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Back":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Back":
                 break
             case "Sample Reload":
                 sample.read_datatype("NAME", pos_name)
@@ -82,65 +105,46 @@ def configure_name_email(win_pos, rows, sample, dict):
                 elif (same_column):
                     messages.one_line_error_handler("Please specify different Columns for selected data", operations.position_correction(pos_name, 100, 100))
                 else: #----- logic for adding the data -----#
-                    columns_of_names = "" #----- columns where name data were added, to compose confirmation message-----#
-                    if values["-FULLNAME-"]: # --------- adding full name -----#
-                        col_full_name = values["-COLUMNNAME-"] #----- column name to use as dictionary key-----#
+                    columns_of_names = "" #----- string containing columns where name data were added, to compose confirmation message-----#
+                    name_added = False #----- using this to avoid adding e-mail if error in adding name (column title length error for example) -----#
+                    title_error = False
+                    if values["-FULLNAME-"]: # --------- if adding full name -----#
                         if len(values["-NAMETITLE-"]) < 1 or len(values["-NAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
-                        else: #----- operations if all checks pass -----#
-                            names = {col_full_name:[values["-NAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
-                            for _ in range(rows):
-                                first = choice(first_names)
-                                last = choice(last_names)
-                                names[col_full_name].append(f"{first} {last}")
-                            columns_of_names = col_full_name
+                            title_error = True
+                        elif not title_error: #----- operations if all checks pass -----#
+                            names, columns_of_names = name_generation(values["-COLUMNNAME-"], values["-NAMETITLE-"], columns_of_names, fnames= first_names, lnames= last_names)
                             dict.update(names)
-                    if values["-FIRSTNAME-"]: #----- adding first name -----#
-                        col_first_name = values["-COLUMNFIRSTNAME-"] #----- column name to use as dictionary key-----#
+                    if values["-FIRSTNAME-"]: #----- if adding first name -----#
                         if len(values["-FIRSTNAMETITLE-"]) < 1 or len(values["-FIRSTNAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
-                        else: #----- operations if all checks pass -----#
-                            fnames = {col_first_name:[values["-FIRSTNAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
-                            for row in range(rows):
-                                first = choice(first_names)
-                                fnames[col_first_name].append(first)
-                            columns_of_names = col_first_name
+                            title_error = True
+                        elif not title_error: #----- operations if all checks pass -----#
+                            fnames, columns_of_names = name_generation(values["-COLUMNFIRSTNAME-"], values["-FIRSTNAMETITLE-"], columns_of_names, fnames= first_names)
                             dict.update(fnames)
-                    if values["-LASTNAME-"]: #----- adding last name -----#
-                        col_last_name = values["-COLUMNLASTNAME-"] #----- column name to use as dictionary key-----#
+                    if values["-LASTNAME-"]: #----- if adding last name -----#
                         if len(values["-LASTNAMETITLE-"]) < 1 or len(values["-LASTNAMETITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
-                        else: #----- operations if all checks pass -----#
-                            lnames = {col_last_name:[values["-LASTNAMETITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
-                            for row in range(rows):
-                                last = choice(last_names)
-                                lnames[col_last_name].append(last)
-                            if columns_of_names == "": #----- if no column for first name -----#
-                                columns_of_names = col_last_name
-                            else:
-                                columns_of_names = f"{columns_of_names}, {col_last_name}"
+                            title_error = True
+                        elif not title_error: #----- operations if all checks pass -----#
+                            lnames, columns_of_names = name_generation(values["-COLUMNLASTNAME-"], values["-LASTNAMETITLE-"], columns_of_names, lnames= last_names)
                             dict.update(lnames)
-                    if values ["-EMAIL-"]: # -------- if adding e-mail as well -----#
+                    if values ["-EMAIL-"] and not title_error: # -------- if adding e-mail as well -----#
                         mail_col_name = values["-COLUMNMAIL-"] #----- column name to use as dictionary key-----#
                         if len(values["-EMAILTITLE-"]) < 1 or len(values["-EMAILTITLE-"]) > 21:
                             messages.two_line_error_handler("Please ensure the column titles are", "between 1 and 20 characters long", operations.position_correction(pos_name, 200, 100))
-                        else:
-                            emails = {mail_col_name:[values["-EMAILTITLE-"]]} #----- column as key in dictionary and title as first element of associated list -----#
+                        elif not title_error:
                             if values["-FULLNAME-"]: #----- full name for email -----#
-                                generated_mail_addresses = [email_generation(domains, dict, values["-COLUMNNAME-"], row, seperate= False) for row in range(1, rows + 1)]
-                                emails[mail_col_name] += generated_mail_addresses
+                                generated_email_addresses = email_generation(domains, values["-COLUMNMAIL-"], values["-EMAILTITLE-"], values["-COLUMNNAME-"], seperate= False)
                             elif values["-FIRSTNAME-"] and not values["-LASTNAME-"]: #----- if last name not added, only use first name for email -----#
-                                generated_mail_addresses = [email_generation(domains, dict, values["-COLUMNFIRSTNAME-"], row, seperate= False) for row in range(1, rows + 1)]
-                                emails[mail_col_name] += generated_mail_addresses
+                                generated_email_addresses = email_generation(domains, values["-COLUMNMAIL-"], values["-EMAILTITLE-"], values["-COLUMNFIRSTNAME-"], seperate= False)
                             elif values["-LASTNAME-"] and not values["-FIRSTNAME-"]: #----- if first name not added, only use last name for email -----#
-                                generated_mail_addresses = [email_generation(domains, dict, values["-COLUMNLASTNAME-"], row, seperate= False) for row in range(1, rows + 1)]
-                                emails[mail_col_name] += generated_mail_addresses
+                                generated_email_addresses = email_generation(domains, values["-COLUMNMAIL-"], values["-EMAILTITLE-"], values["-COLUMNLASTNAME-"], seperate= False)
                             elif values["-FIRSTNAME-"] and values["-LASTNAME-"]: #----- both first and last name for email -----#
-                                generated_mail_addresses = [email_generation(domains, dict, values["-COLUMNFIRSTNAME-"], row, seperate= True, column2= values["-COLUMNLASTNAME-"]) for row in range(1, rows + 1)]
-                                emails[mail_col_name] += generated_mail_addresses
-                            dict.update(emails) #----- add the emails to dictionary -----#
+                                generated_email_addresses = email_generation(domains, values["-COLUMNMAIL-"], values["-EMAILTITLE-"], values["-COLUMNFIRSTNAME-"], seperate= True, column_name_2= values["-COLUMNLASTNAME-"])
+                            dict.update(generated_email_addresses) #----- add the emails to dictionary -----#
                             messages.operation_successful(f"Data added on columns {columns_of_names} and {mail_col_name}", operations.position_correction(pos_name, 200, 100))
-                    else: #----- when not adding email, show confirmation for the name data added -----#
+                    elif not title_error: #----- when not adding email, show confirmation for the name data added -----#
                         messages.operation_successful(f"Data added on column(s) {columns_of_names}", operations.position_correction(pos_name, 200, 100))
     name_window.close()
 
@@ -158,13 +162,13 @@ def configure_number(win_pos, rows, dict):
         [sg.B("Clear"), sg.B("Preview"), sg.Push(),sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
     pos_num = operations.position_correction(win_pos, 180, 80)
-    num_window = sg.Window("Number", layout_num, font= global_constants.DEFAULT_FONT, modal= True, location= pos_num, icon= "icon.ico")
+    num_window = sg.Window("Number", layout_num, font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= pos_num, icon= "icon.ico")
     #----- data number loop -----#
     while True:
         event, values = num_window.read()
         pos_num = num_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Back":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Back":
                 break
             case "Clear":
                 num_window.Element("-NUMMIN-").Update("")
@@ -213,13 +217,13 @@ def configure_location(win_pos, rows, sample, dict):
         [sg.HorizontalSeparator()],
         [sg.B("Preview"), sg.B("Sample Reload"), sg.Push(), sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
-    loc_window = sg.Window("Location", layout_loc, font= global_constants.DEFAULT_FONT, modal= True, location= pos_loc, icon= "icon.ico")
+    loc_window = sg.Window("Location", layout_loc, font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= pos_loc, icon= "icon.ico")
     #----- data location loop -----#
     while True:
         event, values = loc_window.read()
         pos_loc = loc_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Back":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Back":
                 break
             case "Sample Reload":
                 sample.read_datatype("LOCATION", pos_loc)
@@ -285,75 +289,6 @@ def configure_location(win_pos, rows, sample, dict):
                         messages.operation_successful(f"Data added on columns {street_col_name}, {city_col_name} and {state_col_name}", operations.position_correction(pos_loc, 150, 80))         
     loc_window.close()
 
-#----- when year is configured in date data type, update the day element if there are transitions between leap and non leap years -----#
-def update_day_for_leap_year_transitions(day_element, val, win, days):
-    RANGE = [day_element for day_element in range (1, days + 1)]
-    try:
-        selected_day = int(val[day_element])
-    except ValueError: #----- if the day has not been selected yet -----#
-        selected_day = ""
-    win.Element(day_element).update(values= RANGE)
-    try:
-        if selected_day <= days: #----- if the existing value is less than the maximum of the new range, maintain it -----#
-            win.Element(day_element).update(selected_day)
-    except TypeError: #----- cannot perform comparisons between string and int, if selected_day from value error exception above -----#
-        win.Element(day_element).update("")     
-
-#----- configuration of the year in date data type -----#
-def configure_year(year_element, month_element, day_element, val, win, year_set):
-    if val[month_element] == "": #----- initial setting -----#
-        win.Element(month_element).update(disabled= False)
-    if val[month_element] == 2: #----- if the year_element changes while the month_element is set to February, we might have to update the days range due to leap years -----#
-        if val[year_element] % 4 == 0 and not year_set % 4 == 0: #----- changing from non leap year_element to leap year_element -----#
-            update_day_for_leap_year_transitions(day_element, val, win, days= 29)
-        if not val[year_element] % 4 == 0 and year_set % 4 == 0: #----- changing from leap year_element to non leap year_element -----#
-            update_day_for_leap_year_transitions(day_element, val, win, days= 28)
-    return val[year_element]
-
-#----- configuration of the month in date data type -----#
-def configure_month(year_element, month_element, day_element, val, win):
-    if val[month_element] in (1,3,5,7,8,10,12): #----- set to 31 day month_element -----#
-        days = 31
-    elif val[month_element] in (4,6,9,11): #----- set to 30 day month_element -----#
-        days = 30
-    elif val[month_element] == 2: #----- for February set to 29 or 28 days based on year_element -----#
-        leap_year = val[year_element] % 4 == 0
-        if leap_year:
-            days = 29
-        else:
-            days = 28
-    DAY_RANGE = [day for day in range(1, days + 1)]
-    try:
-        selected_day = int(val[day_element])
-    except ValueError:
-        selected_day = 32
-    win.Element(day_element).update(values= DAY_RANGE, disabled= False)
-    if selected_day <= days:
-        win.Element(day_element).update(selected_day)
-
-def determine_format(user_input):
-    match user_input: #----- matching user input format to code format -----#
-        case "MM":
-            return "%m"
-        case "Month":
-            return "%B"
-        case "YYYY":
-            return "%Y"
-        case "YY":
-            return "%y"
-        case "Day/MM/Year":
-            return "{day_format}/{month_format}/{year_format}"
-        case "Year/MM/Day":
-            return "{year_format}/{month_format}/{day_format}"
-        case "Day-MM-Year":
-            return "{day_format}-{month_format}-{year_format}"
-        case "Year-MM-Day":
-            return "{year_format}-{month_format}-{day_format}"
-        case "Day Month Year":
-            return "{day_format} {month_format} {year_format}"
-        case "Month Day Year":
-            return "{month_format} {day_format} {year_format}"
-
 #----- configure date generation and storage based on input -----#
 def configure_date(win_pos, rows, dict):
     YEAR_RANGE = [year for year in range(1900, 2101)]
@@ -362,6 +297,77 @@ def configure_date(win_pos, rows, dict):
     YEAR_FORMATS = ("YYYY", "YY")
     DATE_FORMATS_MONTH_INT = ("Day/MM/Year", "Year/MM/Day", "Day-MM-Year", "Year-MM-Day")
     DATE_FORMATS_MONTH_STR = ("Day Month Year", "Month Day Year")
+    
+    #----- when year is configured in date data type, update the day element if there are transitions between leap and non leap years -----#
+    def update_day_for_leap_year_transitions(day_element, val, win, days):
+        RANGE = [day_element for day_element in range (1, days + 1)]
+        try:
+            selected_day = int(val[day_element])
+        except ValueError: #----- if the day has not been selected yet -----#
+            selected_day = ""
+        win.Element(day_element).update(values= RANGE)
+        try:
+            if selected_day <= days: #----- if the existing value is less than the maximum of the new range, maintain it -----#
+                win.Element(day_element).update(selected_day)
+        except TypeError: #----- cannot perform comparisons between string and int, if selected_day from value error exception above -----#
+            win.Element(day_element).update("")     
+
+    #----- configuration of the year in date data type -----#
+    def configure_year(year_element, month_element, day_element, val, win, year_set):
+        if val[month_element] == "": #----- initial setting -----#
+            win.Element(month_element).update(disabled= False)
+        if val[month_element] == 2: #----- if the year_element changes while the month_element is set to February, we might have to update the days range due to leap years -----#
+            if val[year_element] % 4 == 0 and not year_set % 4 == 0: #----- changing from non leap year_element to leap year_element -----#
+                update_day_for_leap_year_transitions(day_element, val, win, days= 29)
+            if not val[year_element] % 4 == 0 and year_set % 4 == 0: #----- changing from leap year_element to non leap year_element -----#
+                update_day_for_leap_year_transitions(day_element, val, win, days= 28)
+        return val[year_element]
+
+    #----- configuration of the month in date data type -----#
+    def configure_month(year_element, month_element, day_element, val, win):
+        if val[month_element] in (1,3,5,7,8,10,12): #----- set to 31 day month_element -----#
+            days = 31
+        elif val[month_element] in (4,6,9,11): #----- set to 30 day month_element -----#
+            days = 30
+        elif val[month_element] == 2: #----- for February set to 29 or 28 days based on year_element -----#
+            leap_year = val[year_element] % 4 == 0
+            if leap_year:
+                days = 29
+            else:
+                days = 28
+        DAY_RANGE = [day for day in range(1, days + 1)]
+        try:
+            selected_day = int(val[day_element])
+        except ValueError:
+            selected_day = 32
+        win.Element(day_element).update(values= DAY_RANGE, disabled= False)
+        if selected_day <= days:
+            win.Element(day_element).update(selected_day)
+
+    #----- matching user input format to code format -----#
+    def determine_format(user_input):
+        match user_input:
+            case "MM":
+                return "%m"
+            case "Month":
+                return "%B"
+            case "YYYY":
+                return "%Y"
+            case "YY":
+                return "%y"
+            case "Day/MM/Year":
+                return "{day_format}/{month_format}/{year_format}"
+            case "Year/MM/Day":
+                return "{year_format}/{month_format}/{day_format}"
+            case "Day-MM-Year":
+                return "{day_format}-{month_format}-{year_format}"
+            case "Year-MM-Day":
+                return "{year_format}-{month_format}-{day_format}"
+            case "Day Month Year":
+                return "{day_format} {month_format} {year_format}"
+            case "Month Day Year":
+                return "{month_format} {day_format} {year_format}"
+    
     layout_date = [
         [sg.T("", size = 10), sg.T("YYYY", size = 5, justification= "center"), sg.T(" /"), sg.T("MM", size = 3, justification= "center"), sg.T(" /"), sg.T("DD", size = 3, justification= "center"), sg.Push()],
         [sg.T("Start:", size = 10), sg.Combo(YEAR_RANGE, size= 5, key= "-MINYEAR-", enable_events= True, readonly= True), sg.Combo(MONTH_RANGE, size= 4, key= "-MINMONTH-", enable_events= True, disabled= True, readonly= True), sg.Combo(values= [""], size= 4, key= "-MINDAY-", disabled= True, readonly= True), sg.Push()],
@@ -378,7 +384,7 @@ def configure_date(win_pos, rows, dict):
         [sg.B("Clear"), sg.B("Preview"), sg.Push(),sg.B("Add", button_color= ("#292e2a", "#5ebd78")), sg.B("Back", button_color= ("#ffffff", "#bf365f"))]
     ]
     pos_date = operations.position_correction(win_pos, 140, 80)
-    date_window = sg.Window("Date", layout_date, font= global_constants.DEFAULT_FONT, modal= True, location= pos_date, icon= "icon.ico")
+    date_window = sg.Window("Date", layout_date, font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= pos_date, icon= "icon.ico")
     min_year_set = 0 #----- used for leap year transition calculations -----#
     max_year_set = 0 #----- used for leap year transition calculations -----#
     #----- data date loop -----#
@@ -386,7 +392,7 @@ def configure_date(win_pos, rows, dict):
         event, values = date_window.read()
         pos_date = date_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Back":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Back":
                 break
             case "Clear": #----- restart with all default values in UI -----#
                 date_window.close()

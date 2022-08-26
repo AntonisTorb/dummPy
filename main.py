@@ -38,7 +38,7 @@ def main_window():
                     if event == "Save and Exit":
                         exit_window.close()
                         try:
-                            operations.save_dict(dictionary, operations.position_correction(exit_pos, -160, 10))
+                            output_to_external.save_dict(dictionary, operations.position_correction(exit_pos, -160, 10))
                             break
                         except RuntimeError: #----- if save cancelled -----#
                             None
@@ -67,9 +67,9 @@ def main_window():
                 configuration.configure_location(window_position, excel_rows, sample_data, dictionary)
                 window.un_hide()
             case "-DATE-":
-                #window.hide()
+                window.hide()
                 configuration.configure_date(window_position, excel_rows, dictionary)
-                #window.un_hide()
+                window.un_hide()
             case "-CLEARCOLUMN-":
                 column = values["-COLUMNTOCLEAR-"]
                 if column in dictionary.keys():
@@ -82,7 +82,7 @@ def main_window():
                     messages.one_line_error_handler("Cannot save an empty dictionary", operations.position_correction(window_position, 170, 80))
                 else:
                     try:
-                        operations.save_dict(dictionary, window_position)
+                        output_to_external.save_dict(dictionary, window_position)
                         last_saved = dictionary.copy()
                     except RuntimeError: #----- if save cancelled -----#
                         None

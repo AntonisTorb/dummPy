@@ -52,12 +52,12 @@ def reset(win, win_pos, theme, dict, saved_dict):
         [sg.T("This will reset the app and all progress will be lost!")],
         [sg.Push(), sg.T("Would you like to save your progress?"), sg.Push()],
         [sg.Push(), sg.B("Save and Reset"), sg.B("Reset", button_color= ("#292e2a","#5ebd78")), sg.Cancel(button_color= ("#ffffff","#bf365f")),sg.Push()]
-    ], font= global_constants.DEFAULT_FONT, modal= True, location= position_correction(win_pos, 80, 80)  , icon= "icon.ico")
+    ], font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= position_correction(win_pos, 80, 80)  , icon= "icon.ico")
     while True:
         event, values = reset_window.read()
         reset_position = reset_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Cancel":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Cancel":
                 break
             case "Save and Reset":
                 try:
@@ -84,12 +84,12 @@ def change_theme(theme, win, win_pos, dict):
     theme_position = position_correction(win_pos, 100, 80)
     theme_window = sg.Window("Choose theme: ",[
         [sg.Combo(THEMES, key= "-THEME-", readonly= True, default_value= theme), sg.OK(button_color= ("#292e2a", "#5ebd78")), sg.Cancel()]
-    ], font= global_constants.DEFAULT_FONT, modal= True, location= theme_position)
+    ], font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= theme_position)
     while True:
         event, values = theme_window.read()
         theme_position = theme_window.current_location()
         match event: #----- actions to perform based on event -----#
-            case sg.WINDOW_CLOSED | "Cancel":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "Cancel":
                 break
             case "OK":
                 selected_theme = values["-THEME-"]
@@ -135,15 +135,15 @@ def about_window(win_pos):
     about_window = sg.Window("About", [
         [sg.Push(), sg.T("~~DummPy~~", font= ("Arial", 30)), sg.Push()],
         [sg.T("Random Data Generator", font= ("Arial", 20))],
-        [sg.Push(), sg.T("Version 1.0.1"), sg.Push()],
+        [sg.Push(), sg.T("Version 1.1.0"), sg.Push()],
         [sg.HorizontalSeparator()],
         [sg.Push(), sg.T("Github Repository", key="-URL-", enable_events= True, tooltip= url, text_color= "Blue", background_color= "Grey",font= global_constants.DEFAULT_FONT + ("underline",)), sg.Push()],
         [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]
-    ], font= global_constants.DEFAULT_FONT, modal= True, location= win_pos, icon= "icon.ico")
+    ], font= global_constants.DEFAULT_FONT, enable_close_attempted_event= True, modal= True, location= win_pos, icon= "icon.ico")
     while True:
         event, values = about_window.read()
         match event:
-            case sg.WINDOW_CLOSED | "OK":
+            case sg.WINDOW_CLOSE_ATTEMPTED_EVENT | "OK":
                 break
             case "-URL-":
                 webbrowser.open(url)
@@ -161,4 +161,3 @@ def rows_are_set(win):
     win.Element("-DATE-").update(disabled= False)
     win.Element("Preview").update(disabled= False)
     win.Element("Generate").update(disabled= False)
-
