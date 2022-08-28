@@ -7,7 +7,6 @@ import scripts.global_constants as global_constants
 import webbrowser  # core python module
 from pathlib import Path  # core python module
 import PySimpleGUI as sg  # pip install pysimplegui
-from random import choice, randint, uniform  # core python module
 
 #----- main window and logic loop -----#
 def main_window():
@@ -69,6 +68,10 @@ def main_window():
             case "-DATE-":
                 window.hide()
                 configuration.configure_date(window_position, excel_rows, dictionary)
+                window.un_hide()
+            case "-STRING-":
+                window.hide()
+                configuration.configure_string(window_position, excel_rows, dictionary)
                 window.un_hide()
             case "-CLEARCOLUMN-":
                 column = values["-COLUMNTOCLEAR-"]

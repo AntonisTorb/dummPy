@@ -20,7 +20,7 @@ def dict_sort_for_df(dict, rows):
     for key in dict:
         if ord(key) > last_col_ch_num:
             last_col_ch_num = ord(key)
-    excel = [chr(ch_num) for ch_num in list(range(ord('A'), last_col_ch_num + 1))] #----- create a list with column names up to the last -----#
+    excel = [chr(ch_num) for ch_num in range(ord('A'), last_col_ch_num + 1)] #----- create a list with column names up to the last -----#
     #----- new dict with values from previous, sorted, and with blanck columns where there is no data -----#
     for col in excel:
         try:
@@ -124,6 +124,7 @@ def new_main_window(win_pos= (None, None), theme= global_constants.DEFAULT_THEME
         [sg.T("Number"), sg.Push(), sg.B("Configure", key= "-NUMBER-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.T("Location"), sg.Push(), sg.B("Configure", key= "-LOCATION-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.T("Date"), sg.Push(), sg.B("Configure", key= "-DATE-", disabled= True, disabled_button_color= ("#f2557a", None))],
+        [sg.T("String"), sg.Push(), sg.B("Configure", key= "-STRING-", disabled= True, disabled_button_color= ("#f2557a", None))],
         [sg.HorizontalSeparator()],
         [sg.B("Reset"), sg.Push(), sg.B("Preview", disabled= True, disabled_button_color= ("#f2557a", None)), sg.B("Generate", disabled= True, disabled_button_color= ("#f2557a", None), button_color= ("#292e2a","#5ebd78"))]
     ]
@@ -135,7 +136,7 @@ def about_window(win_pos):
     about_window = sg.Window("About", [
         [sg.Push(), sg.T("~~DummPy~~", font= ("Arial", 30)), sg.Push()],
         [sg.T("Random Data Generator", font= ("Arial", 20))],
-        [sg.Push(), sg.T("Version 1.1.0"), sg.Push()],
+        [sg.Push(), sg.T("Version 1.2.0"), sg.Push()],
         [sg.HorizontalSeparator()],
         [sg.Push(), sg.T("Github Repository", key="-URL-", enable_events= True, tooltip= url, text_color= "Blue", background_color= "Grey",font= global_constants.DEFAULT_FONT + ("underline",)), sg.Push()],
         [sg.Push(), sg.OK(button_color= ("#292e2a","#5ebd78")), sg.Push()]
@@ -159,5 +160,6 @@ def rows_are_set(win):
     win.Element("-NUMBER-").update(disabled= False)
     win.Element("-LOCATION-").update(disabled= False)
     win.Element("-DATE-").update(disabled= False)
+    win.Element("-STRING-").update(disabled= False)
     win.Element("Preview").update(disabled= False)
     win.Element("Generate").update(disabled= False)
