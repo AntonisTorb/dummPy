@@ -36,11 +36,12 @@ def preview_dataframe(dict, rows, win_pos):
     temp_df = pd.DataFrame.from_dict(dict_sort_for_df(dict, rows))
     headers = list(temp_df.head())
     val =  temp_df.values.tolist()
-    preview_layout = [
-        [sg.Table(val, headings= headers, num_rows= 20, display_row_numbers= True)],
+    table_layout = [
+        [sg.Table(val, headings= headers, num_rows= 20,expand_x=True,expand_y=True, auto_size_columns= False,vertical_scroll_only= False ,display_row_numbers= True)],
         [sg.OK(button_color= ("#292e2a", "#5ebd78"))]
     ]
-    sg.Window("Dataframe Preview", preview_layout, modal= True, font= global_constants.DEFAULT_FONT, location= win_pos, grab_anywhere= True, icon= "icon.ico").read(close= True)
+    preview_layout = [[sg.Frame("", table_layout, title_color= "red", size= (600,600),expand_x=True,expand_y=True)]]
+    sg.Window("Dataframe Preview", preview_layout, modal= True, font= global_constants.DEFAULT_FONT, location= win_pos, grab_anywhere= True, resizable= True, icon= "icon.ico").read(close= True)
 
 #----- resets the main window to the default state -----#
 def reset(win, win_pos, theme, dict, saved_dict):
